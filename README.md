@@ -1,4 +1,4 @@
-#GDraw
+# GDraw
 
 A small collection of mini-libraries and scripts to draw graphs:
 
@@ -14,7 +14,7 @@ A small collection of mini-libraries and scripts to draw graphs:
 
 You can use the output of `main.cpp` with Graphviz `neato -n2`. But you'll have to fiddle with the size of vertices and edges to obtain a drawing that you can actually see.
 
-#Build
+# Build
 
 Make sure you have BOOST and change `LDIR` in the makefile to point to BOOST's location. Just `make`.
 
@@ -24,18 +24,18 @@ Make sure you have BOOST and change `LDIR` in the makefile to point to BOOST's l
 ./main < in.dot | ./draw.py > graph.tex
 ```
 
-#FAQ and Known Problems
+# FAQ and Known Problems
 
-###Why?
+### Why?
 
 A pet project to get used to BOOST. If you want something more serious: [OGDF](https://ogdf.uos.de/).
 
 
-###The drawings are ugly.
+### The drawings are ugly.
 
 It uses the Chobak-Payne algorithm (known for its ugliness) to obtain the coordinates.
 
 
-###The drawings have more crossings than they should.
+### The drawings have more crossings than they should.
 
 For now the crossing edges can cross more than they should due to how the controls points are calculated. Should not occur often. 
