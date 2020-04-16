@@ -1,12 +1,12 @@
 CXX=g++
-CXXFlags=-O3 -g
+CXXFLAGS=-O3 -g
 LDIR=-L/usr/lib/x86_64-linux-gnu/
 LDLIBS=-lboost_graph -lboost_regex
 LDBOOSTTEST=-lboost_system -lboost_thread -lboost_unit_test_framework
 RM=rm -f
 
 main: xnumber.hpp util.hpp main.cpp
-	$(CXX) -o $@ util.hpp xnumber.hpp main.cpp $(LDIR) $(LDLIBS)
+	$(CXX) $(CXXFLAGS) -o $@ util.hpp xnumber.hpp main.cpp $(LDIR) $(LDLIBS)
 
 unit_test: xnumber.hpp util.hpp unit_test.cpp
 	$(CXX) -o $@ util.hpp xnumber.hpp unit_test.cpp $(LDIR) $(LDLIBS) $(LDBOOSTTEST)
