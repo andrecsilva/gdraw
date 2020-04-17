@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
-from tikz import Figure
-from tikz import Node
-from tikz import Path
 import sys
 import pydot
 
+from tikz import Figure
+from tikz import Node
+from tikz import Path
+
 def posToList(s):
-    f = lambda s : tuple([float(k) for k in s.split(',')])
+    f = lambda s: tuple([float(k) for k in s.split(',')])
     return [f(i) for i in s[1:-1].split(' ')]
 
 def tikzFromPos(g):
     f = Figure()
     tikzNodes = dict()
     for n in g.get_nodes():
-        tn = Node(posToList(n.get_attributes()['pos'])[0],n.get_name())
+        tn = Node(posToList(n.get_attributes()['pos'])[0], n.get_name())
         tikzNodes[n.get_name()] = tn
         f.addNode(tn)
 
@@ -23,8 +24,8 @@ def tikzFromPos(g):
         if 'pos' in e.get_attributes():
             controls = posToList(e.get_attributes()['pos'])
             p.to(controls[0])
-            for i in range(1,len(controls),3):
-                p.curveTo(controls[i+2],controls[i],controls[i+1])
+            for i in range(1, len(controls), 3):
+                p.curveTo(controls[i+2], controls[i], controls[i+1])
         p.to(tikzNodes[e.get_destination()])
         f.addPath(p)
     return f
