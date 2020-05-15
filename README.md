@@ -12,7 +12,7 @@ A small collection of mini-libraries and scripts to draw graphs:
 
 `draw.py` - Reads a graph from stdin with the DOT format and outputs a TikZ document for the drawing. Assumes all the vertices of the input have the `pos` attribute. Edges with a `pos` attribute are drawn as a combination of cubic splines.
 
-You can use the output of `main.cpp` with Graphviz `neato -n2`. But you'll have to fiddle with the size of vertices and edges to obtain a drawing that you can actually see.
+`draw.sh` - A script that draws the graph with the same format as above using neato from Graphviz.
 
 # Build
 
