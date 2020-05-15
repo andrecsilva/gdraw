@@ -44,13 +44,13 @@ BOOST_AUTO_TEST_CASE(XNumber1_test)
 	rotations_t<Graph> rotations;
 	std::vector<edge_t<Graph>> kuratowski_edges;
 
-	BOOST_CHECK(leqXnumber1(g,rotations)==false);
+	BOOST_CHECK(leqXnumberk(g,rotations,1)==false);
 	
 	std::cout << "cr(K3,4) > 1"  << std::endl;
 
 	g = getKpq(3,3);
 
-	BOOST_CHECK(leqXnumber1(g,rotations)==true);
+	BOOST_CHECK(leqXnumberk(g,rotations,1)==true);
 
 	std::cout << "cr(K3,3) = 1, embedding: " << std::endl;
 
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(XNumber1_test)
 
 	g = getKn(4);
 
-	BOOST_CHECK(leqXnumber1(g,rotations)==true);
+	BOOST_CHECK(leqXnumberk(g,rotations,1)==true);
 
 	std::cout << "cr(K4) = 0, embedding: " << std::endl;
 
@@ -71,6 +71,49 @@ BOOST_AUTO_TEST_CASE(XNumber1_test)
 			std::cout << e << " ";
 	std::cout << std::endl;
 	}
+}
+
+BOOST_AUTO_TEST_SUITE_END ()
+
+BOOST_AUTO_TEST_SUITE (XNumberGeneral)
+
+BOOST_AUTO_TEST_CASE(XNumberGeneral_test)
+{
+	Graph g = getKpq(3,4);
+
+	rotations_t<Graph> rotations;
+	std::vector<edge_t<Graph>> kuratowski_edges;
+
+	BOOST_CHECK(leqXnumberk(g,rotations,2)==true);
+	
+	std::cout << "cr(K3,4) <= 2"  << std::endl;
+
+	for(auto i : rotations){
+		for(auto e : i)	
+			std::cout << e << " ";
+	std::cout << std::endl;
+	}
+
+	g = getKn(6);
+
+	BOOST_CHECK(leqXnumberk(g,rotations,2)==false);
+
+	std::cout << "cr(K6) > 2" << std::endl;
+
+	g = getKn(6);
+
+	BOOST_CHECK(leqXnumberk(g,rotations,3)==true);
+
+	std::cout << "cr(K6) <= 3, embedding: " << std::endl;
+
+	removeIsolatedVertices(g);
+
+	for(auto i : rotations){
+		for(auto e : i)	
+			std::cout << e << " ";
+	std::cout << std::endl;
+	}
+
 }
 
 BOOST_AUTO_TEST_SUITE_END ()

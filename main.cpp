@@ -5,14 +5,17 @@
 
 
 int main(){
-
+	
+	int k;
+	std::cin >> k;
+	std::cout << k << std::endl;
 	Graph g = readDOT();
 	Graph gp = Graph(g);
 
 	rotations_t<Graph> rotations;
 
 	bool answer =
-	       	leqXnumber1(gp,rotations);
+	       	leqXnumberk(gp,rotations,k);
 
 	removeIsolatedVertices(gp);
 	

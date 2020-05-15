@@ -121,6 +121,47 @@ bool isPlanar(const G& g) noexcept{
 		);
 }
 
+template <typename G>
+edge_t<G> addEdgeWithIndex(G& g
+		,const vertex_t<G>& target
+		,const vertex_t<G>& source
+		,const int& index
+		,std::vector<edge_t<G>>& edges_by_id
+	       	,typename boost::property_map<G, boost::edge_index_t>::type& edgei_map
+		){
+	edge_t<G> e = add_edge(target,source,g).first;
+	put(edgei_map,e,index);
+	edges_by_id.at(index) = e;
+	return e;
+}
+
+template <typename G>
+void fakeCross(G& g
+		,edge_t<G>& ei
+		,const int ei_index
+		,edge_t<G>& ej
+		,const int ej_index
+		,std::vector<edge_t<G>>& edges_by_id
+	       	,typename boost::property_map<G, boost::edge_index_t>::type& edgei_map
+		,typename boost::graph_traits<G>::vertices_size_type& vcount
+		,typename boost::graph_traits<G>::edges_size_type& ecount
+		){
+
+	//caution: this invalidates descriptors..
+	remove_edge(ei,g);
+	remove_edge(ej,g);
+
+	//reuses original indexes
+	vertex_t<G> v = vertex(vcount,g);
+	addEdgeWithIndex(g,source(ei,g),v,ei_index,edges_by_id,edgei_map);
+	addEdgeWithIndex(g,source(ej,g),v,ej_index,edges_by_id,edgei_map);
+
+	addEdgeWithIndex(g,target(ei,g),v,ecount++,edges_by_id,edgei_map);
+	addEdgeWithIndex(g,target(ej,g),v,ecount++,edges_by_id,edgei_map);
+	vcount++;
+}
+
+
 /*
  * Checks if the graph has crossing number 1.
  * If it does, rotations contains the order type of the graph and the crossing vertices.
@@ -128,15 +169,16 @@ bool isPlanar(const G& g) noexcept{
  */
 template <typename G>
 bool leqXnumber1(G& g
-		,rotations_t<G>& _out_rotations
+	       	,rotations_t<G>& _out_rotations
+		,std::vector<edge_t<G>>& edges_by_id
+	       	,typename boost::property_map<G, boost::edge_index_t>::type& edgei_map
+		,typename boost::graph_traits<G>::vertices_size_type& vcount
+		,typename boost::graph_traits<G>::edges_size_type& ecount
 		) noexcept{
 
+	std::vector<edge_t<G>> kuratowski_edges;
 
-	std::vector<edge_t <G>> kuratowski_edges;
-
-	auto k = num_vertices(g);
-
-	rotations_t<G> embedding {k};
+	rotations_t<G> embedding {num_vertices(g)};
 
 	//TODO a graph with only one crossing has at most 3n-5 edges
 	if(isPlanar(g,kuratowski_edges, embedding)){
@@ -144,91 +186,140 @@ bool leqXnumber1(G& g
 		return true;
 	}
 
-	embedding.resize(k+1);
-
-	//adds crossing vertex
-	add_vertex(g);
-
-
-	auto edgei_map = get(boost::edge_index, g);
-	auto ecount  = num_edges(g);
-	
-	for(typename std::vector<edge_t<G>>::size_type i = 0; i < kuratowski_edges.size(); ++i){
-		auto ei = kuratowski_edges.at(i);
-		for(typename std::vector<edge_t<G> >::size_type j = 0; j < kuratowski_edges.size(); ++j){
-			auto ej = kuratowski_edges.at(j);
-			// Don't try to cross edges with a common endpoint
+	//embedding.resize(num_vertices(g)+1);
+	//Essentially the same as the general case, but we use the edges of the kuratowski subgraph instead
+	for(std::size_t i =0; i < kuratowski_edges.size(); i++){
+		edge_t<G> ei = edges_by_id.at(i);
+		for(std::size_t j = i+1; j < kuratowski_edges.size() ;  j++){
+			edge_t<G> ej = edges_by_id.at(j);
+			//std::cout << ei << " x " << ej << std::endl;
 			if (target(ei,g) != source(ej,g)
-				        && target(ei,g) != target(ej,g)
-				       	&& source(ei,g) != source(ej,g)
-				       	&& source(ei,g) != target(ej,g)
-					){
-				//std::cout << ei << " x " << ej << std::endl;
-				auto eit = target(ei,g);
-				auto eis = source(ei,g);
+					&& target(ei,g) != target(ej,g)
+					&& source(ei,g) != source(ej,g)
+					&& source(ei,g) != target(ej,g)
+			   ){
 
-				auto ejt = target(ej,g);
-				auto ejs = source(ej,g);
+				vertex_t<G> eit = target(ei,g);
+				vertex_t<G> eis = source(ei,g);
 
-				//caution: this invalidates descriptors..
-				int eiindex = get(edgei_map,ei);
-				remove_edge(ei,g);
-				int ejindex = get(edgei_map,ej);
-				remove_edge(ej,g);
+				vertex_t<G> ejt = target(ej,g);
+				vertex_t<G> ejs = source(ej,g);
 
-				//reuses original indexes
-				auto tik = add_edge(eit,k,g).first;
-				put(edgei_map,tik,eiindex);
-				auto tjk = add_edge(ejt,k,g).first;
-				put(edgei_map,tjk,ejindex);
+				fakeCross(g,ei,i,ej,j,edges_by_id,edgei_map,vcount,ecount);
 
-				auto sik = add_edge(eis,k,g).first;
-				put(edgei_map,sik,ecount++);
-				auto sjk = add_edge(ejs,k,g).first;
-				put(edgei_map,sjk,ecount++);
-
-				//TODO caution about edge indexes here...
-				//TODO possible solution: unordered map maintaining edge_indexes
-				//TODO add_edge(e,g) -> maintain original edge index if possible
-				
 				if (isPlanar(g,embedding)){
 					_out_rotations = std::move(embedding);
 					return true;
 				}
 
+				//Uncross
 				//TODO O(E/V) here
-				//TODO check if there's a more efficient way to do this, maybe copy the entire graph and modify the copy?
-				//TODO This could be constant time by pop()ing the out_vectors of the known vertices
-				
-				remove_edge(sik,g);
-				remove_edge(tik,g);
-				remove_edge(sjk,g);
-				remove_edge(tjk,g);
+				//TODO This could be constant time by pop()ing the vertices
+				vcount--;
+				clear_vertex(vertex(vcount,g),g);
 				ecount-=2;
 
-				ei = add_edge(eis,eit,g).first;
-				ej = add_edge(ejs,ejt,g).first;
-
-				put(edgei_map,ei,eiindex);
-				put(edgei_map,ej,ejindex);
-
-				//revalidate descriptors at the vector
-				//TODO will this leak memory? probably not.
-				kuratowski_edges.at(i) = ei;
-				kuratowski_edges.at(j) = ej;
-				//printGraph(g);
+				//revalidate edge descriptors
+				ei = addEdgeWithIndex(g,eis,eit,i,edges_by_id,edgei_map);
+				ej = addEdgeWithIndex(g,ejs,ejt,j,edges_by_id,edgei_map);
 			}
-			//else std::cout << ei << " NOT " << ej << std::endl;
-			
-
+			//else std::cout << "Not disjoint" << std::endl;
 		}
+	}
+	return false;
+
+}
+
+
+template <typename G>
+bool leqXnumberkRecursion(G& g
+	       	,rotations_t<G>& _out_rotations
+		,std::vector<edge_t<G>>& edges_by_id
+	       	,typename boost::property_map<G, boost::edge_index_t>::type& edgei_map
+		,typename boost::graph_traits<G>::vertices_size_type& vcount
+		,typename boost::graph_traits<G>::edges_size_type& ecount
+		,int k
+		) noexcept{
+	//std::cout << "Depth: " << k << std::endl;
+
+	if(k<=1){
+		return leqXnumber1(g,_out_rotations,edges_by_id,edgei_map,vcount,ecount);
+	}
+	if(leqXnumberkRecursion(g,_out_rotations,edges_by_id,edgei_map,vcount,ecount,k-1))
+		return true;
+	else{
+		//std::cout << "Depth: " << k << std::endl;
+		auto ecount  = num_edges(g);
+		for(std::size_t i =0; i < ecount; i++){
+			edge_t<G> ei = edges_by_id.at(i);
+			for(std::size_t j = i+1; j < ecount ;  j++){
+				edge_t<G> ej = edges_by_id.at(j);
+				//std::cout << ei << " x " << ej << std::endl;
+				if (target(ei,g) != source(ej,g)
+						&& target(ei,g) != target(ej,g)
+						&& source(ei,g) != source(ej,g)
+						&& source(ei,g) != target(ej,g)
+				   ){
+
+					vertex_t<G> eit = target(ei,g);
+					vertex_t<G> eis = source(ei,g);
+
+					vertex_t<G> ejt = target(ej,g);
+					vertex_t<G> ejs = source(ej,g);
+
+					fakeCross(g,ei,i,ej,j,edges_by_id,edgei_map,vcount,ecount);
+
+					if (leqXnumberkRecursion(g,_out_rotations,edges_by_id,edgei_map,vcount,ecount,k-1)){
+						return true;
+					}
+
+					
+					//Uncross
+					//TODO O(E/V) here
+					//TODO This could be constant time by pop()ing the vertices
+					vcount--;
+					clear_vertex(vertex(vcount,g),g);
+					ecount-=2;
+
+					//revalidate edge descriptors
+					ei = addEdgeWithIndex(g,eis,eit,i,edges_by_id,edgei_map);
+					ej = addEdgeWithIndex(g,ejs,ejt,j,edges_by_id,edgei_map);
+				}
+				//else std::cout << "Not disjoint" << std::endl;
+			}
+		}
+
 	}
 	return false;
 }
 
+
 template <typename G>
-void isXnumberk(G& g, int k)noexcept{
+bool leqXnumberk(G& g, rotations_t<G>& _out_rotations,  int k) noexcept{
+
+	//Build a vector indexing the edges by their id.
+	//Used to avoid iterator/edge description invalidation caused by the removal of edges
+	typename boost::property_map<G, boost::edge_index_t>::type edgei_map = get(boost::edge_index, g) ;
+	
+	//size = num_edges + all the possible extra edges (k*2)
+	std::vector<edge_t<G>> edges_by_id {num_edges(g)+k*2};
+
+	typename boost::graph_traits<G>::edge_iterator ei, ei_end;
+	for(boost::tie(ei,ei_end) = edges(g);ei!=ei_end;ei++){
+		auto i = get(edgei_map,*ei);
+		edges_by_id.at(i) = *ei;
+	}
+	//add all the possible extra vertices at once, to avoid repeatedly doing so in the recursion
+	typename boost::graph_traits<G>::vertices_size_type vcount = num_vertices(g);
+	typename boost::graph_traits<G>::edges_size_type ecount = num_edges(g);
+
+	for (auto i=0; i<k;i++)
+		add_vertex(g);
+
+	
+	return leqXnumberkRecursion(g,_out_rotations,edges_by_id,edgei_map,vcount,ecount,k);
 }
+
 
 /*
  * Assumes g is planar
