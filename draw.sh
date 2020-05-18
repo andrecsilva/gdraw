@@ -17,4 +17,4 @@ match($0,/pos="[^"]*"/){
 	next
 }
 {print}
-' | neato -n2 -Nxlabel="\N" -Nshape=point -Tpdf
+' | neato -n2 -Nxlabel="\N" -Nshape=point -Tsvg

@@ -66,6 +66,19 @@ void printGraph(const G& g) noexcept{
 }
 
 /**
+ * Removes isolated vertices (i.e. degree 0) from the graph.
+ */
+template <typename G>
+void removeIsolatedVertices(G& g){
+	//Reverse order, as the indexes are rearranged in the graph to make it contiguous
+	for(int i = num_vertices(g)-1; i>0 ;i--){
+		auto vi = vertex(i,g);
+		if(out_degree(vi,g)==0)
+			remove_vertex(vi,g);
+	}
+}
+
+/**
  * A simple wrapper for the boyer_myrvold_planarity_test in boost. 
  * It assumes the graph has the edge_index and vertex_index as internal properties.
  */
@@ -316,8 +329,15 @@ bool leqXnumberk(G& g, rotations_t<G>& _out_rotations,  int k) noexcept{
 	for (auto i=0; i<k;i++)
 		add_vertex(g);
 
-	
-	return leqXnumberkRecursion(g,_out_rotations,edges_by_id,edgei_map,vcount,ecount,k);
+	bool answer = leqXnumberkRecursion(g,_out_rotations,edges_by_id,edgei_map,vcount,ecount,k);
+
+	//removes extra added vertices and resizes the rotations if necessary
+	if(answer){
+		removeIsolatedVertices(g);
+		_out_rotations.resize(num_vertices(g));
+	}
+
+	return answer;
 }
 
 
@@ -328,7 +348,6 @@ template <typename G>
 std::vector<coord_t> draw(G& g) noexcept{
 	//copy graph
 	G gprime= G(g);
-
 
 	auto edgei_map = get( boost::edge_index, gprime);
 	typename boost::graph_traits<G>::edges_size_type ecount = num_edges(gprime);
@@ -414,15 +433,3 @@ std::vector<coord_t> draw(G& g) noexcept{
 	return coordinates;
 }
 
-/**
- * Removes isolated vertices (i.e. degree 0) from the graph.
- */
-template <typename G>
-void removeIsolatedVertices(G& g){
-	//Reverse order, as the indexes are rearranged in the graph to make it contiguous
-	for(int i = num_vertices(g)-1; i>0 ;i--){
-		auto vi = vertex(i,g);
-		if(out_degree(vi,g)==0)
-			remove_vertex(vi,g);
-	}
-}

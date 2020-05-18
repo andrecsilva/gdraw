@@ -8,7 +8,7 @@ int main(){
 
 	//Graph g = readDOT();
 	//Graph g = getKpq(3,4);
-	Graph g = getKn(6);
+	Graph g = getKn(4);
 	Graph gp = Graph(g);
 
 	printGraph(gp);
@@ -18,14 +18,12 @@ int main(){
 //	//if(isPlanar(g,kuratowski_edges, rotations))
 //	//	return false;
 //
-	int k = 3;
+	int k = 1;
 	bool answer =
 	       leqXnumberk(gp,rotations,k);
 
 	//auto edgei_map = get( boost::edge_index, gp);
 //
-	removeIsolatedVertices(gp);
-
 	printGraph(gp);
 
 	//auto edgei_map = get( boost::edge_index, gp);
@@ -34,7 +32,7 @@ int main(){
 	//for(boost::tie(ei,ei_end) = edges(gp);ei!=ei_end;ei++)
 	//	put(edgei_map,*ei,ecount++);
 
-	std::cout << "cr(G) <= " <<  k <<  " ? :" << answer << std::endl;
+	std::cout << "cr(G) <= " <<  k <<  " ? : " << (answer ? "yes" : "no") << std::endl;
 
 	//std::cout << std::endl;
 	std::cout << "Rotations:" << std::endl;

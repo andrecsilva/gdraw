@@ -16,8 +16,6 @@ int main(){
 	bool answer =
 	       	leqXnumberk(gp,rotations,k);
 
-	removeIsolatedVertices(gp);
-	
 	if(answer){
 		std::vector<coord_t> coordinates {num_vertices(gp)};
 		coordinates = draw(gp);
