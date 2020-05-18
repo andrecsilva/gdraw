@@ -8,7 +8,6 @@ int main(){
 	
 	int k;
 	std::cin >> k;
-	std::cout << k << std::endl;
 	Graph g = readDOT();
 	Graph gp = Graph(g);
 

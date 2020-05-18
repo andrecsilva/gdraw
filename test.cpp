@@ -46,11 +46,11 @@ int main(){
 	}
 
 	//std::cout << "Before Pw"  << std::endl;
-	//if (answer){
-	//	std::vector<coord_t> coordinates {num_vertices(gp)};
-	//	coordinates = draw(gp);
-	//	writeDOT(std::cout,g,gp,rotations,coordinates);
-	//}
+	if (answer){
+		std::vector<coord_t> coordinates {num_vertices(gp)};
+		coordinates = draw(gp);
+		writeDOT(std::cout,g,gp,rotations,coordinates);
+	}
 
 
 
