@@ -2,7 +2,7 @@
 
 A small collection of mini-libraries and scripts to draw graphs:
 
-`xnumber.hpp` - Template library over the BOOST Graph Library that calculates the crossing number cr(G) of a graph G and "draws" (i.e. output vertices coordinates) graphs. For now it works only for cr(G)=1. It uses small improvement of the usual naive algorithm.
+`xnumber.hpp` - Template library over the BOOST Graph Library that calculates the crossing number cr(G) of a graph G and "draws" (i.e. output vertices coordinates) graphs. It uses small improvement of the usual naive algorithm.
 
 `util.hpp` - Has a bunch of useful functions. 
 
@@ -12,17 +12,23 @@ A small collection of mini-libraries and scripts to draw graphs:
 
 `draw.py` - Reads a graph from stdin with the DOT format and outputs a TikZ document for the drawing. Assumes all the vertices of the input have the `pos` attribute. Edges with a `pos` attribute are drawn as a combination of cubic splines.
 
-`draw.sh` - A script that draws the graph with the same format as above using neato from Graphviz.
+`draw.sh` - A tiny awk+bash script that draws the graph with the same format as above using neato from Graphviz.
 
 # Build
 
 Make sure you have BOOST and change `LDIR` in the makefile to point to BOOST's location. Just `make`.
 
-#Example of Usage 
+# Example of Usage 
 
 ```
-./main < in.dot | ./draw.py > graph.tex
+echo "3" | cat - in_graph.dot | ./main | ./draw.sh > out_drawing.pdf
 ```
+
+# Example drawing (an optimal drawing of K<sub>6</sub> with 3 crossings)
+
+![alt text][k6drawing]
+
+[k6drawing]: https://github.com/andrecsilva/gdraw/blob/master/example.svg "Optimal drawing of K6"
 
 # FAQ and Known Problems
 
