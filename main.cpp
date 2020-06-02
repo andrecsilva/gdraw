@@ -3,15 +3,22 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graphviz.hpp>
 
+using AdjList = boost::adjacency_list<
+	boost::vecS
+	,boost::vecS
+	,boost::undirectedS
+	,boost::property<boost::vertex_index_t,int>
+	,boost::property<boost::edge_index_t,int>
+	>; 
 
 int main(){
 	
 	int k;
 	std::cin >> k;
-	Graph g = readDOT();
-	Graph gp = Graph(g);
+	AdjList g = readDOT<AdjList>();
+	AdjList gp = AdjList(g);
 
-	rotations_t<Graph> rotations;
+	rotations_t<AdjList> rotations;
 
 	bool answer =
 	       	leqXnumberk(gp,rotations,k);

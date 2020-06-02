@@ -1,15 +1,6 @@
 #include "xnumber.hpp"
 
-#include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graphviz.hpp>
-
-using Graph = boost::adjacency_list<
-	boost::vecS
-	,boost::vecS
-	,boost::undirectedS
-	,boost::property<boost::vertex_index_t,int>
-	,boost::property<boost::edge_index_t,int>
-	>; 
 
 struct cubicSpline{
 	coord_t from;
@@ -29,6 +20,7 @@ std::ostream& operator<<(std::ostream& out, const cubicSpline& spline){
 	return out;
 }
 
+template <typename Graph>
 Graph getV8() noexcept{
 	Graph g(8);
 	add_edge(0, 1, g);
@@ -53,6 +45,7 @@ Graph getV8() noexcept{
 	return g;
 }
 
+template <typename Graph>
 Graph getKn(int n) noexcept{
 
 	Graph Kn(n);
@@ -72,6 +65,7 @@ Graph getKn(int n) noexcept{
 	return Kn;
 }
 
+template <typename Graph> 
 Graph getKpq(int p,int q) noexcept
 {
 
@@ -96,6 +90,7 @@ Graph getKpq(int p,int q) noexcept
  * Reads a DOT file from stdin and returns the graph.
  */
 
+template <typename Graph>
 Graph readDOT() noexcept
 {
 
@@ -153,19 +148,19 @@ crossingSpline(const coord_t& xpoint, const std::pair<coord_t,coord_t>& e, const
 	return spline;
 }
 
-template <typename G>
-void writeDOT(std::ostream& out, G& g, const std::vector<coord_t>& coordinates) noexcept{
+template <typename Graph>
+void writeDOT(std::ostream& out, Graph& g, const std::vector<coord_t>& coordinates) noexcept{
 	PosWriter<std::vector<coord_t>> vpw{coordinates};
 	boost::write_graphviz(out,g,vpw);
 }
 
 
-template <typename G>
-void writeDOT(std::ostream& out, const G& g, const G& gp, const rotations_t<G>& rotations, const std::vector<coord_t>& coordinates ) noexcept{
+template <typename Graph>
+void writeDOT(std::ostream& out, const Graph& g, const Graph& gp, const rotations_t<Graph>& rotations, const std::vector<coord_t>& coordinates ) noexcept{
 	auto ognvertices = num_vertices(g);
 
 	//TODO change to a unordered_map using a simple hash function on a pair of integers
-	std::map<edge_t<G>,cubicSpline> xcoordinates;
+	std::map<edge_t<Graph>,cubicSpline> xcoordinates;
 
 	for(auto i = ognvertices; i < rotations.size() ; i++){
 		auto ri = rotations.at(i);
@@ -194,6 +189,6 @@ void writeDOT(std::ostream& out, const G& g, const G& gp, const rotations_t<G>& 
 	
 
 	PosWriter<std::vector<coord_t>> vpw{coordinates};
-	PosWriter<std::map<edge_t<G>,cubicSpline>> epw{xcoordinates};
+	PosWriter<std::map<edge_t<Graph>,cubicSpline>> epw{xcoordinates};
 	boost::write_graphviz(out,g,vpw,epw);
 }
