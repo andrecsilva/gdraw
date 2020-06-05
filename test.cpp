@@ -1,82 +1,59 @@
+#include "pplane.hpp"
 #include "util.hpp"
+
+#include <iostream>
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graphviz.hpp>
 
+using AdjList = boost::adjacency_list<
+	boost::vecS
+	,boost::vecS
+	,boost::undirectedS
+	,boost::property<boost::vertex_index_t,size_t>
+	,boost::property<boost::edge_index_t,size_t>
+	>; 
+
 
 int main(){
 
-	//Graph g = readDOT();
-	//Graph g = getKpq(3,4);
-	Graph g = getKn(4);
-	Graph gp = Graph(g);
-
-	printGraph(gp);
-//
-	rotations_t<Graph> rotations;
-//
-//	//if(isPlanar(g,kuratowski_edges, rotations))
-//	//	return false;
-//
-	int k = 1;
-	bool answer =
-	       leqXnumberk(gp,rotations,k);
-
-	//auto edgei_map = get( boost::edge_index, gp);
-//
-	printGraph(gp);
-
-	//auto edgei_map = get( boost::edge_index, gp);
-	//typename boost::graph_traits<Graph>::edges_size_type ecount = 0;
-	//typename boost::graph_traits<Graph>::edge_iterator ei, ei_end;
-	//for(boost::tie(ei,ei_end) = edges(gp);ei!=ei_end;ei++)
-	//	put(edgei_map,*ei,ecount++);
-
-	std::cout << "cr(G) <= " <<  k <<  " ? : " << (answer ? "yes" : "no") << std::endl;
-
-	//std::cout << std::endl;
-	std::cout << "Rotations:" << std::endl;
-
-	for(auto i : rotations){
-		for(auto e : i)	
-			std::cout << e << " ";
-	std::cout << std::endl;
-	}
-
-	//std::cout << "Before Pw"  << std::endl;
-	if (answer){
-		std::vector<coord_t> coordinates {num_vertices(gp)};
-		coordinates = draw(gp);
-		writeDOT(std::cout,g,gp,rotations,coordinates);
-	}
-
-
-
-	//std::cout << "Coordinates: " << std::endl;
-//	typename boost::graph_traits<Graph>::vertex_iterator vi, vi_end;
-//	for(boost::tie(vi,vi_end) = vertices(g); vi!=vi_end; vi++)
-//		//std::cout << "[" << *vi << "]" << "(" << coordinates.at(*vi).x << "," << coordinates.at(*vi).y << ")";
-//		std::cout << coordinates.at(*vi).x << " " << coordinates.at(*vi).y << "\t";
-//	std::cout << std::endl;
-
-	//printGraph(g);
-
-	//isPlanar(g);
-	
-	//int k = 1;
-
-	//add_vertex(g);
-
-	//auto edgei_map = get( boost::edge_index, g);
-
-	//auto ei = boost::add_edge(5,0,g);
+	AdjList g = getKn<AdjList>(5);
+	//AdjList g = getKpq<AdjList>(5,5);
+	//AdjList g{8};
 	//
-	//typename boost::graph_traits<Graph>::edges_size_type ecount = 9;
 
-	//put(edgei_map,ei,ecount);
+	//add_edge(1,0,g);
+	//add_edge(2,1,g);
+	//add_edge(2,3,g);
+	//add_edge(3,0,g);
+
+	//add_edge(0,4,g);
+	//add_edge(1,5,g);
+	//add_edge(2,6,g);
+	//add_edge(3,7,g);
+
+	//Tree<AdjList> tree;
+	//tree = dfsTree(g,vertex(0,g));
+
+	embedding_t embedding = readEmbedding();	
+
+	//for(size_t i=0; i < embedding.size(); i++){
+	//	std::cout << i << ":" << std::endl;
+	//	for (size_t j=0; j< embedding.at(i).size(); j++){
+	//		auto p = embedding.at(i).at(j);
+	//		std::cout << p.first << " " << p.second << "\t";
+	//	}
+	//	std::cout << std::endl;
+	//}
 
 	//printGraph(g);
+	std::vector<int> esignals = getEdgeSignals(g,embedding);
 
-	return 0;
+	for(size_t i =0 ; i< esignals.size(); i++)
+		std::cout << "[" << i << "]" << esignals.at(i) << " ";
+	std::cout << std::endl;
 
+	AdjList h = planarDoubleCover(g,esignals);
+	
+	printGraph(h);
 }
