@@ -2,8 +2,17 @@
 #include <vector>
 #include <map>
 #include <limits>
+
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/undirected_dfs.hpp>
+
+//#define DEBUG
+
+#ifdef DEBUG 
+#define DEBUG(x) x
+#else 
+#define DEBUG(x) do{}while(0);
+#endif
 
 template <typename Graph>	
 using edge_t = typename boost::graph_traits<Graph>::edge_descriptor;
@@ -70,9 +79,9 @@ struct DFSTreeVisitor : public boost::dfs_visitor<>{
 		t->parent.at(target(e,g)) = source(e,g);
 		//TODO crude...
 		num_edges(g);
-		std::cout << "Inserting: " << e << std::endl;
-		std::cout << "Parent: " << source(e,g) << std::endl;
-		std::cout << "Child: " << target(e,g) << std::endl;
+		DEBUG(std::cout << "Inserting: " << e << std::endl;)
+		DEBUG(std::cout << "Parent: " << source(e,g) << std::endl;)
+		DEBUG(std::cout << "Child: " << target(e,g) << std::endl;)
 	}
 
 };
@@ -81,7 +90,7 @@ struct DFSTreeVisitor : public boost::dfs_visitor<>{
 template <typename Graph>
 Tree<Graph> dfsTree(const Graph& g, const vertex_t<Graph>& root){
 
-	std::cout << "num_vertices: " <<  num_vertices(g) << std::endl;
+	DEBUG(std::cout << "num_vertices: " <<  num_vertices(g) << std::endl;)
 
 	Tree<Graph> tree{root,num_vertices(g)};
 
@@ -99,14 +108,14 @@ Tree<Graph> dfsTree(const Graph& g, const vertex_t<Graph>& root){
 			.visitor(vis)
 			.edge_color_map(ecmap));
 
-	std::cout << "Before return... " << std::endl;
+	DEBUG(std::cout << "Before return... " << std::endl;)
 
 	for(auto e: tree.edges){
-		std::cout<< e << " " << std::endl;
+		DEBUG(std::cout <<  e << " " << std::endl;)
 	}
 
 	for(auto v: tree.parent){
-		std::cout<< v << " " << std::endl;
+		DEBUG(std::cout << v << " " << std::endl;)
 	}
 
 	return tree;
@@ -160,11 +169,11 @@ struct DoublePlanarVisitor : public boost::dfs_visitor<>{
 			add_edge(target(e,g),source(e,g),*h);
 			add_edge(target(e,g)+ogvcount,source(e,g)+ogvcount,*h);
 		}
-		std::cout << "Back_edge: " << e << std::endl;
-		std::cout << "Edge Signal:" << edges_signals->at(boost::get(edgei_map,e)) << std::endl;
-		std::cout << "Signal Parent: " << signalFromRoot->at(source(e,g)) << std::endl;
-		std::cout << "Signal Child: " << signalFromRoot->at(target(e,g)) << std::endl;
-		std::cout << "Cycle Signal: " << cycle_signal << std::endl;
+		DEBUG(std::cout << "Back_edge: " << e << std::endl;)
+		DEBUG(std::cout << "Edge Signal:" << edges_signals->at(boost::get(edgei_map,e)) << std::endl;)
+		DEBUG(std::cout << "Signal Parent: " << signalFromRoot->at(source(e,g)) << std::endl;)
+		DEBUG(std::cout << "Signal Child: " << signalFromRoot->at(target(e,g)) << std::endl;)
+		DEBUG(std::cout << "Cycle Signal: " << cycle_signal << std::endl;)
 	}
 
 	void tree_edge(const edge_t<Graph> e, const Graph& g){
@@ -176,10 +185,10 @@ struct DoublePlanarVisitor : public boost::dfs_visitor<>{
 		auto edgei_map = get(boost::edge_index,g);
 		signalFromRoot->at(target(e,g)) = signalFromRoot->at(source(e,g)) * edges_signals->at(boost::get(edgei_map,e));
 		
-		std::cout << "Tree_edge: " << e << std::endl;
-		std::cout << "Edge Signal:" << edges_signals->at(boost::get(edgei_map,e)) << std::endl;
-		std::cout << "Signal Parent: " << signalFromRoot->at(source(e,g)) << std::endl;
-		std::cout << "Signal Child: " << signalFromRoot->at(target(e,g)) << std::endl;
+		DEBUG(std::cout << "Tree_edge: " << e << std::endl;)
+		DEBUG(std::cout << "Edge Signal:" << edges_signals->at(boost::get(edgei_map,e)) << std::endl;)
+		DEBUG(std::cout << "Signal Parent: " << signalFromRoot->at(source(e,g)) << std::endl;)
+		DEBUG(std::cout << "Signal Child: " << signalFromRoot->at(target(e,g)) << std::endl;)
 	}
 
 };
@@ -191,7 +200,7 @@ Graph planarDoubleCover(Graph& g, std::vector<int> edges_signals){
 	size_t ogvcount = num_vertices(g);
 
 	std::vector<int> signalFromRoot(ogvcount,1);
-	Graph h{ogvcount*2};
+	Graph h(ogvcount*2);
 
 	DoublePlanarVisitor<Graph> vis(h,ogvcount,edges_signals,signalFromRoot);
 

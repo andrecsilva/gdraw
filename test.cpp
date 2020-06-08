@@ -17,6 +17,7 @@ using AdjList = boost::adjacency_list<
 
 int main(){
 
+
 	AdjList g = getKn<AdjList>(5);
 	//AdjList g = getKpq<AdjList>(5,5);
 	//AdjList g{8};
