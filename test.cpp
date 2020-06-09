@@ -1,10 +1,12 @@
-#include "pplane.hpp"
-#include "util.hpp"
-
 #include <iostream>
+#include <string>
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graphviz.hpp>
+
+#include "pplane.hpp"
+#include "util.hpp"
+#include "io.hpp"
 
 using AdjList = boost::adjacency_list<
 	boost::vecS
@@ -57,4 +59,16 @@ int main(){
 	AdjList h = planarDoubleCover(g,esignals);
 	
 	printGraph(h);
+
+	auto gn = num_vertices(g);
+
+	std::map<edge_t<AdjList>,std::string> edge_colors;
+
+	for(auto [ei,ei_end] = edges(h);ei!=ei_end;ei++)
+		if((target(*ei,h) < gn && source(*ei,h) >=gn) ||
+			(source(*ei,h) < gn && target(*ei,h) >=gn))
+			edge_colors[*ei]="red";
+
+	writeDOT(std::cout,h,draw(h),{},{},edge_colors);
+
 }

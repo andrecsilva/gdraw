@@ -1,10 +1,6 @@
 #include <iostream>
 
 #include <boost/graph/boyer_myrvold_planar_test.hpp>
-#include <boost/graph/make_biconnected_planar.hpp>
-#include <boost/graph/make_maximal_planar.hpp>
-#include <boost/graph/planar_canonical_ordering.hpp>
-#include <boost/graph/chrobak_payne_drawing.hpp>
 
 
 template <typename Graph>	
@@ -16,54 +12,7 @@ using vertex_t = typename boost::graph_traits<Graph>::vertex_descriptor;
 template <typename Graph>	
 using rotations_t = typename std::vector< std::vector< edge_t<Graph> > >;
 
-struct coord_t{
-	float x;
-	float y;
 
-	coord_t() {x=0;y=0;}
-
-	coord_t(float _x, float _y) : x(_x), y(_y) {}
-
-
-	friend std::ostream& operator<<(std::ostream& out, const coord_t& c);
-};
-
-
-std::ostream& operator<<(std::ostream& out, const coord_t& c){
-	out << c.x << "," << c.y;
-	return out;
-}
-
-
-/***
- * Prints the vertices and edges of a graph.
- */
-template <typename Graph>
-void printGraph(const Graph& g) noexcept{
-	
-	typename boost::graph_traits<Graph>::vertex_iterator vi;
-
-	std::cout << "Vertices:" << std::endl;
-
-	//auto edgei_map = get( boost::edge_index, g);
-	//auto vertexi_map = get( boost::vertex_index, g);
-
-	for(vi = vertices(g).first; vi!=vertices(g).second; ++vi){
-		std::cout << *vi << " ";
-	}
-
-	typename boost::graph_traits<Graph>::edge_iterator ei;
-
-	std::cout << std::endl << "Edges:" << std::endl;
-
-	auto edgei_map = get( boost::edge_index, g);
-
-	for(ei = edges(g).first; ei!=edges(g).second; ++ei){
-		std::cout << "[" << boost::get(edgei_map,*ei) << "]" <<*ei << " "; 
-	}
-
-	std::cout << std::endl;
-}
 
 /**
  * Removes isolated vertices (i.e. degree 0) from the graph.
@@ -88,6 +37,7 @@ bool isPlanar(const Graph& g
 		,rotations_t<Graph>& rotations
 	     ) noexcept{
 	
+	//TODO change this to make_iterator...
 	//From the boost example, somehow gets an iterator of rotations out of this
 	using rotations_pmap_t = typename boost::iterator_property_map <
 				typename rotations_t<Graph>::iterator
@@ -341,95 +291,4 @@ bool leqXnumberk(Graph& g, rotations_t<Graph>& _out_rotations,  int k) noexcept{
 }
 
 
-/*
- * Assumes g is planar
- */
-template <typename Graph>
-std::vector<coord_t> draw(Graph& g) noexcept{
-	//copy graph
-	Graph gprime= Graph{g};
-
-	auto edgei_map = get( boost::edge_index, gprime);
-	typename boost::graph_traits<Graph>::edges_size_type ecount = num_edges(gprime);
-	typename boost::graph_traits<Graph>::edge_iterator ei, ei_end;
-
-	//Find the original edge with index 0.
-	//We want the newly added edges with index >= num_edges(g)
-	edge_t<Graph> original_0_edge;
-	for(boost::tie(ei,ei_end) = edges(gprime);ei!=ei_end;ei++)
-		if(get(edgei_map,*ei)==0)
-			original_0_edge = *ei;
-			
-	rotations_t<Graph> embedding(num_vertices(gprime));
-	//typedef std::vector< typename boost::graph_traits<Graph>::edge_descriptor > vec_t;
-	//std::vector<vec_t> embedding(num_vertices(g));
-	
-
-	//make biconnected
-	boyer_myrvold_planarity_test(
-		boost::boyer_myrvold_params::graph = gprime
-		,boost::boyer_myrvold_params::embedding = &embedding[0]
-		);
-
-	//std::cout << "Rotations:" << std::endl;
-
-	//for(auto i = embedding.begin(); i!=embedding.end();i++){
-	//	std::cout << std::distance(embedding.begin(),i) << std::endl;
-	//	for(auto ei = i->begin(); ei!=i->end();ei++)	
-	//		std::cout << *ei << " ";
-	//std::cout << std::endl;
-	//}
-
-	make_biconnected_planar(gprime,&embedding[0]);
-
-	//std::cout << "Make Biconnected" << std::endl;
-	//printGraph(gprime);
-
-	//Add edge_index for the newly added edges
-	for(boost::tie(ei,ei_end) = edges(gprime);ei!=ei_end;ei++)
-		if(get(edgei_map,*ei)==0 && *ei!=original_0_edge)
-			put(edgei_map,*ei,ecount++);
-
-
-	//make maximal
-	boyer_myrvold_planarity_test(
-		boost::boyer_myrvold_params::graph = gprime
-		,boost::boyer_myrvold_params::embedding = &embedding[0]
-		);
-
-	//TODO see what happens if the embedding here is reused... boost example passes &embedding[0]...
-	make_maximal_planar(gprime,&embedding[0]);
-
-	//std::cout << "Make Maximal" << std::endl;
-	//printGraph(gprime);
-	//Add edge_index for the newly added edges
-	for(boost::tie(ei,ei_end) = edges(gprime);ei!=ei_end;ei++)
-		if(get(edgei_map,*ei)==0 && *ei!=original_0_edge)
-			put(edgei_map,*ei,ecount++);
-
-	//printGraph(gprime);
-	//canonical ordering	
-	boyer_myrvold_planarity_test(
-		boost::boyer_myrvold_params::graph = gprime
-		,boost::boyer_myrvold_params::embedding = &embedding[0]
-		);
-
-	std::vector<vertex_t<Graph> > ordering;
-	planar_canonical_ordering(gprime, &embedding[0], std::back_inserter(ordering));
-
-	
-	//get drawing
-	
-	std::vector<coord_t> coordinates(num_vertices(gprime));
-
-	chrobak_payne_straight_line_drawing(gprime,
-			  embedding, 
-			  ordering.begin(),
-			  ordering.end(),
-			  &coordinates[0]);
-
-	//printGraph(gprime);
-
-	return coordinates;
-}
 

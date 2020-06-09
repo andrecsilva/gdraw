@@ -14,8 +14,8 @@ main: xnumber.hpp util.hpp main.cpp
 unit_test: xnumber.hpp util.hpp unit_test.cpp
 	$(CXX) -o $@ util.hpp xnumber.hpp unit_test.cpp $(LDIR) $(LDLIBS) $(LDBOOSTTEST)
 
-test: pplane.hpp xnumber.hpp util.hpp test.cpp
-	$(CXX) -o $@ -g $(DMACRO) pplane.hpp util.hpp xnumber.hpp test.cpp $(LDIR) $(LDLIBS)
+test: pplane.hpp xnumber.hpp util.hpp io.hpp test.cpp
+	$(CXX) -o $@ -g $(DMACRO) pplane.hpp util.hpp xnumber.hpp io.hpp test.cpp $(LDIR) $(LDLIBS)
 
 .PHONY: clean
 .PHONY: quick_test

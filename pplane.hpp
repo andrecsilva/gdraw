@@ -213,5 +213,16 @@ Graph planarDoubleCover(Graph& g, std::vector<int> edges_signals){
 			.visitor(vis)
 			.edge_color_map(ecmap));
 
+
+	auto edgei_map_h = get( boost::edge_index, h);
+
+	//TODO maybe preserve the edge indexes of the original graph?
+	typename boost::graph_traits<Graph>::edges_size_type ecount = 0;
+
+	typename boost::graph_traits<Graph>::edge_iterator ei;
+
+	for(ei = edges(h).first; ei!=edges(h).second; ++ei)
+		put(edgei_map_h,*ei,ecount++);
+
 	return h;
 }
