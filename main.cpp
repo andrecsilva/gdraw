@@ -1,4 +1,6 @@
+#include "io.hpp"
 #include "util.hpp"
+#include "xnumber.hpp"
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graphviz.hpp>
@@ -24,9 +26,8 @@ int main(){
 	       	leqXnumberk(gp,rotations,k);
 
 	if(answer){
-		std::vector<coord_t> coordinates {num_vertices(gp)};
-		coordinates = draw(gp);
-		writeDOT(std::cout,g,gp,rotations,coordinates);
+		auto coordinates = draw(gp);
+		writeDOT(std::cout,g,coordinates,{},getEdgeCoordinates(g,gp,rotations,coordinates));
 	}
 
 	return 0;

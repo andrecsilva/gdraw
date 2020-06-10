@@ -2,16 +2,29 @@
 #define BOOST_TEST_MODULE Hello
 #include <boost/test/unit_test.hpp>
 
+#include <iostream>
+#include <boost/graph/adjacency_list.hpp>
+
 #include "util.hpp"
+#include "xnumber.hpp"
+#include "pplane.hpp"
+
+using AdjList = boost::adjacency_list<
+	boost::vecS
+	,boost::vecS
+	,boost::undirectedS
+	,boost::property<boost::vertex_index_t,size_t>
+	,boost::property<boost::edge_index_t,size_t>
+	>; 
 
 BOOST_AUTO_TEST_SUITE (isPlanar_test)
 
 BOOST_AUTO_TEST_CASE(isPlanar_test)
 {
-	Graph K5 = getKn(5);
+	AdjList K5 = getKn<AdjList>(5);
 
-	rotations_t<Graph> rotations(num_vertices(K5));
-	std::vector< edge_t<Graph> > kuratowski_edges;
+	rotations_t<AdjList> rotations(num_vertices(K5));
+	std::vector< edge_t<AdjList> > kuratowski_edges;
 
 	BOOST_CHECK(!isPlanar(K5,kuratowski_edges,rotations));
 	
@@ -39,16 +52,16 @@ BOOST_AUTO_TEST_SUITE (XNumber1)
 
 BOOST_AUTO_TEST_CASE(XNumber1_test)
 {
-	Graph g = getKpq(3,4);
+	AdjList g = getKpq<AdjList>(3,4);
 
-	rotations_t<Graph> rotations;
-	std::vector<edge_t<Graph>> kuratowski_edges;
+	rotations_t<AdjList> rotations;
+	std::vector<edge_t<AdjList>> kuratowski_edges;
 
 	BOOST_CHECK(leqXnumberk(g,rotations,1)==false);
 	
 	std::cout << "cr(K3,4) > 1"  << std::endl;
 
-	g = getKpq(3,3);
+	g = getKpq<AdjList>(3,3);
 
 	BOOST_CHECK(leqXnumberk(g,rotations,1)==true);
 
@@ -60,7 +73,7 @@ BOOST_AUTO_TEST_CASE(XNumber1_test)
 	std::cout << std::endl;
 	}
 
-	g = getKn(4);
+	g = getKn<AdjList>(4);
 
 	BOOST_CHECK(leqXnumberk(g,rotations,1)==true);
 
@@ -79,10 +92,10 @@ BOOST_AUTO_TEST_SUITE (XNumberGeneral)
 
 BOOST_AUTO_TEST_CASE(XNumberGeneral_test)
 {
-	Graph g = getKpq(3,4);
+	AdjList g = getKpq<AdjList>(3,4);
 
-	rotations_t<Graph> rotations;
-	std::vector<edge_t<Graph>> kuratowski_edges;
+	rotations_t<AdjList> rotations;
+	std::vector<edge_t<AdjList>> kuratowski_edges;
 
 	BOOST_CHECK(leqXnumberk(g,rotations,2)==true);
 	
@@ -94,13 +107,13 @@ BOOST_AUTO_TEST_CASE(XNumberGeneral_test)
 	std::cout << std::endl;
 	}
 
-	g = getKn(6);
+	g = getKn<AdjList>(6);
 
 	BOOST_CHECK(leqXnumberk(g,rotations,2)==false);
 
 	std::cout << "cr(K6) > 2" << std::endl;
 
-	g = getKn(6);
+	g = getKn<AdjList>(6);
 
 	BOOST_CHECK(leqXnumberk(g,rotations,3)==true);
 
@@ -118,9 +131,11 @@ BOOST_AUTO_TEST_CASE(XNumberGeneral_test)
 
 BOOST_AUTO_TEST_SUITE_END ()
 
-//BOOST_AUTO_TEST_SUITE (isPlanar_test)
+//BOOST_AUTO_TEST_SUITE (DoublePlanarCover)
 //
-//BOOST_AUTO_TEST_CASE(isPlanar_test)
-//{
+//BOOST_AUTO_TEST_CASE(DoublePlanarCover_test){
+//
+//	AdjList h = planarDoubleCover(g,esignals);
 //
 //}
+//BOOST_AUTO_TEST_SUITE_END ()
