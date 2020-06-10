@@ -20,7 +20,12 @@ def tikzFromPos(g):
 
     #Graphviz pos attribute requires 3n+1 points, drawing a cubic splines for each triple of points
     for e in g.get_edges():
-        p = Path(tikzNodes[e.get_source()])
+        color = ''
+        if 'color' in e.get_attributes():
+            color = e.get_attributes()['color']
+
+        p = Path(tikzNodes[e.get_source()],style=f'draw,{color}')
+
         if 'pos' in e.get_attributes():
             controls = posToList(e.get_attributes()['pos'])
             p.to(controls[0])

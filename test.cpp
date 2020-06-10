@@ -20,7 +20,7 @@ using AdjList = boost::adjacency_list<
 int main(){
 
 
-	AdjList g = getKn<AdjList>(5);
+	AdjList g = getKn<AdjList>(6);
 	//AdjList g = getKpq<AdjList>(5,5);
 	//AdjList g{8};
 	//
@@ -52,13 +52,13 @@ int main(){
 	//printGraph(g);
 	std::vector<int> esignals = getEdgeSignals(g,embedding);
 
-	for(size_t i =0 ; i< esignals.size(); i++)
-		std::cout << "[" << i << "]" << esignals.at(i) << " ";
-	std::cout << std::endl;
+//	for(size_t i =0 ; i< esignals.size(); i++)
+//		std::cout << "[" << i << "]" << esignals.at(i) << " ";
+//	std::cout << std::endl;
 
 	AdjList h = planarDoubleCover(g,esignals);
 	
-	printGraph(h);
+	//printGraph(h);
 
 	auto gn = num_vertices(g);
 
