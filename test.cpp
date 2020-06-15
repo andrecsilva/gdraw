@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <math.h>
 
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graphviz.hpp>
@@ -21,12 +22,33 @@ using AdjList = boost::adjacency_list<
 	,boost::property<boost::edge_index_t,size_t>
 	>; 
 
-std::vector<coord_t> tutteDraw();
+/*
+ * Returns a set of cycle.size() points evenly spaced along the circle of the specifies radius (1 by default);
+ * */
+template <typename Graph>
+std::vector<std::pair<vertex_t<Graph>,coord_t>> cycleToPolygon(const std::vector<vertex_t<Graph>>& cycle,const double radius=1){
+
+	std::vector<std::pair<vertex_t<Graph>,coord_t>> polygon;
+	double step = 2 * M_PI / (cycle.size());
+	for (size_t i=0; i<cycle.size();i++){
+		coord_t coord = {radius*cos(i*step), radius*sin(i*step)};
+		polygon.push_back({ cycle.at(i), coord });
+	}
+
+	//std::cout << "Step: " << step << std::endl;
+	//std::cout << "Step FULL: " << step * cycle.size() << std::endl;
+	//for(auto p : polygon){
+	//	std::cout << p.first << " : " << p.second << std::endl;
+	//}
+	
+	return polygon;
+}
 
 template <typename Graph>
 std::tuple<boost::numeric::ublas::matrix<double>,
 	boost::numeric::ublas::vector<double>,
-	boost::numeric::ublas::vector<double>> 
+	boost::numeric::ublas::vector<double>,
+	std::vector<size_t>>
 	buildSystem(const Graph& g,
 	       	const std::vector<std::pair<vertex_t<Graph>,coord_t>>& polygon){
 
@@ -71,7 +93,7 @@ std::tuple<boost::numeric::ublas::matrix<double>,
 			}
 		}
 	}
-	return {A,bx,by};
+	return {A,bx,by,vertex_to_row};
 }
 
 void
@@ -84,7 +106,36 @@ solve(boost::numeric::ublas::matrix<double>& A,
 	lu_substitute(A,pm,b);
 }
 
-std::vector<coord_t> baricenters();
+template <typename Graph>
+std::vector<coord_t> tutteDraw(const Graph& g, const std::vector<vertex_t<Graph>>& facial_cycle){
+
+	std::vector<coord_t> coordinates(num_vertices(g));
+	std::vector<std::pair<vertex_t<Graph>,coord_t>> polygon = cycleToPolygon<Graph>(facial_cycle,num_vertices(g));
+	std::vector<bool> in_polygon(num_vertices(g),false);
+
+	for (auto p : polygon){
+		coordinates.at(p.first) = p.second;
+		in_polygon.at(p.first) = true;
+	}
+
+
+	auto [A,bx,by,vertex_to_row] = buildSystem(g,polygon);
+
+	std::cout << A << std::endl;
+	std::cout << bx << std::endl;
+	std::cout << by << std::endl;
+
+	solve(A,bx);
+	solve(A,by);
+
+	for(size_t i =0; i< vertex_to_row.size();i++)
+		if(!in_polygon[i])
+			coordinates.at(i) = {bx(vertex_to_row[i]),by(vertex_to_row[i])};
+
+
+	return coordinates;
+}
+
 
 int main(){
 
@@ -150,21 +201,15 @@ int main(){
 	add_edge(1,3,g);
 	add_edge(1,4,g);
 
-	add_edge(2,2,g);
 	add_edge(2,3,g);
 	add_edge(2,4,g);
 
 	add_edge(3,4,g);
-	std::vector<std::pair<vertex_t<AdjList>,coord_t>> polygon = { {0,{3,6}}, {1,{0,3}}, {2,{4,1}} };
-	auto [A,bx,by] = buildSystem(g,polygon);
 
-	std::cout << A << std::endl;
-	std::cout << bx << std::endl;
-	std::cout << by << std::endl;
+	auto coordinates = tutteDraw(g,{0,1,2});
 
-	solve(A,bx);
-	solve(A,by);
+	writeDOT(std::cout,g,coordinates);
 
-	std::cout << bx << std::endl;
-	std::cout << by << std::endl;
+	//std::cout << bx << std::endl;
+	//std::cout << by << std::endl;
 }
