@@ -1,6 +1,37 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/properties.hpp>
 
+/***
+ * Prints the vertices and edges of a graph.
+ */
+template <typename Graph>
+void printGraph(const Graph& g) noexcept{
+	
+	typename boost::graph_traits<Graph>::vertex_iterator vi;
+
+	std::cout << "Vertices:" << std::endl;
+
+	//auto edgei_map = get( boost::edge_index, g);
+	//auto vertexi_map = get( boost::vertex_index, g);
+
+	for(vi = vertices(g).first; vi!=vertices(g).second; ++vi){
+		std::cout << *vi << " ";
+	}
+
+	typename boost::graph_traits<Graph>::edge_iterator ei;
+
+	std::cout << std::endl << "Edges:" << std::endl;
+
+	auto edgei_map = get( boost::edge_index, g);
+
+	for(ei = edges(g).first; ei!=edges(g).second; ++ei){
+		std::cout << "[" << boost::get(edgei_map,*ei) << "]" <<*ei << " "; 
+	}
+
+	std::cout << std::endl;
+}
+
+
 template <typename Graph>
 Graph getV8() noexcept{
 	Graph g(8);

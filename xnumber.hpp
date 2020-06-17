@@ -256,7 +256,12 @@ bool leqXnumberkRecursion(Graph& g
 	return false;
 }
 
-
+/*
+ * Checks if the Graph g has crossing number at most k. If it does planarized g
+ * by adding at most k vertices at the crossings. A combinatorial embedding of
+ * the planarization is written in _out_rotations.
+ * Invalidates edge_descriptors and iterators.
+ */
 template <typename Graph>
 bool leqXnumberk(Graph& g, rotations_t<Graph>& _out_rotations,  int k) noexcept{
 

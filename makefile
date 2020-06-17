@@ -14,8 +14,8 @@ main: xnumber.hpp util.hpp io.hpp main.cpp
 unit_test: xnumber.hpp util.hpp unit_test.cpp
 	$(CXX) -o $@ unit_test.cpp $(LDIR) $(LDLIBS) $(LDBOOSTTEST)
 
-test: pplane.hpp xnumber.hpp util.hpp io.hpp test.cpp
-	$(CXX) -o $@ -g test.cpp $(LDIR) $(LDLIBS)
+test: coordinates.hpp pplane.hpp xnumber.hpp util.hpp draw.hpp io.hpp test.cpp
+	$(CXX) -std=c++1z -o $@ -g test.cpp $(LDIR) $(LDLIBS)
 
 .PHONY: clean
 .PHONY: quick_test

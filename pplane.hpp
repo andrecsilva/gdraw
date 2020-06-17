@@ -110,13 +110,15 @@ Tree<Graph> dfsTree(const Graph& g, const vertex_t<Graph>& root){
 
 	DEBUG(std::cout << "Before return... " << std::endl;)
 
-	for(auto e: tree.edges){
-		DEBUG(std::cout <<  e << " " << std::endl;)
+	DEBUG(for(auto e: tree.edges){
+		std::cout <<  e << " " << std::endl;
 	}
+	)
 
-	for(auto v: tree.parent){
-		DEBUG(std::cout << v << " " << std::endl;)
+	DEBUG(for(auto v: tree.parent){
+		std::cout <<  v << " " << std::endl;
 	}
+	)
 
 	return tree;
 
@@ -147,11 +149,11 @@ struct DoublePlanarVisitor : public boost::dfs_visitor<>{
 	Graph* h;
 	size_t ogvcount;
 	std::vector<int>* edges_signals;
-	std::vector<int>* signalFromRoot;
+	std::vector<int>* signal_from_root;
 
-	DoublePlanarVisitor() : ogvcount{}, edges_signals{}, signalFromRoot{} {};
+	DoublePlanarVisitor() : ogvcount{}, edges_signals{}, signal_from_root{} {};
 
-	DoublePlanarVisitor(Graph& h,size_t ogvcount, std::vector<int>& edges_signals, std::vector<int>& signalFromRoot) : h{&h}, ogvcount{ogvcount}, edges_signals{&edges_signals}, signalFromRoot{&signalFromRoot} {};
+	DoublePlanarVisitor(Graph& h,size_t ogvcount, std::vector<int>& edges_signals, std::vector<int>& signal_from_root) : h{&h}, ogvcount{ogvcount}, edges_signals{&edges_signals}, signal_from_root{&signal_from_root} {};
 
 	void back_edge(const edge_t<Graph> e, const Graph& g){
 		auto edgei_map = get(boost::edge_index,g);
@@ -160,7 +162,7 @@ struct DoublePlanarVisitor : public boost::dfs_visitor<>{
 		auto v = target(e,g);
 
 		int esignal = edges_signals->at(boost::get(edgei_map,e));
-		int cycle_signal = signalFromRoot->at(u) * signalFromRoot->at(v) * esignal;
+		int cycle_signal = signal_from_root->at(u) * signal_from_root->at(v) * esignal;
 		//adds an edge between pair of originals and doubles if the cycle formed by the edge is two-sided
 		if(cycle_signal ==-1){
 			add_edge(target(e,g)+ogvcount,source(e,g),*h);
@@ -171,8 +173,8 @@ struct DoublePlanarVisitor : public boost::dfs_visitor<>{
 		}
 		DEBUG(std::cout << "Back_edge: " << e << std::endl;)
 		DEBUG(std::cout << "Edge Signal:" << edges_signals->at(boost::get(edgei_map,e)) << std::endl;)
-		DEBUG(std::cout << "Signal Parent: " << signalFromRoot->at(source(e,g)) << std::endl;)
-		DEBUG(std::cout << "Signal Child: " << signalFromRoot->at(target(e,g)) << std::endl;)
+		DEBUG(std::cout << "Signal Parent: " << signal_from_root->at(source(e,g)) << std::endl;)
+		DEBUG(std::cout << "Signal Child: " << signal_from_root->at(target(e,g)) << std::endl;)
 		DEBUG(std::cout << "Cycle Signal: " << cycle_signal << std::endl;)
 	}
 
@@ -183,12 +185,12 @@ struct DoublePlanarVisitor : public boost::dfs_visitor<>{
 
 		//TODO at what cost?
 		auto edgei_map = get(boost::edge_index,g);
-		signalFromRoot->at(target(e,g)) = signalFromRoot->at(source(e,g)) * edges_signals->at(boost::get(edgei_map,e));
+		signal_from_root->at(target(e,g)) = signal_from_root->at(source(e,g)) * edges_signals->at(boost::get(edgei_map,e));
 		
 		DEBUG(std::cout << "Tree_edge: " << e << std::endl;)
 		DEBUG(std::cout << "Edge Signal:" << edges_signals->at(boost::get(edgei_map,e)) << std::endl;)
-		DEBUG(std::cout << "Signal Parent: " << signalFromRoot->at(source(e,g)) << std::endl;)
-		DEBUG(std::cout << "Signal Child: " << signalFromRoot->at(target(e,g)) << std::endl;)
+		DEBUG(std::cout << "Signal Parent: " << signal_from_root->at(source(e,g)) << std::endl;)
+		DEBUG(std::cout << "Signal Child: " << signal_from_root->at(target(e,g)) << std::endl;)
 	}
 
 };
@@ -199,10 +201,10 @@ Graph planarDoubleCover(Graph& g, std::vector<int> edges_signals){
 
 	size_t ogvcount = num_vertices(g);
 
-	std::vector<int> signalFromRoot(ogvcount,1);
+	std::vector<int> signal_from_root(ogvcount,1);
 	Graph h(ogvcount*2);
 
-	DoublePlanarVisitor<Graph> vis(h,ogvcount,edges_signals,signalFromRoot);
+	DoublePlanarVisitor<Graph> vis(h,ogvcount,edges_signals,signal_from_root);
 
 	std::vector<boost::default_color_type> edge_color(num_edges(g));
 	auto edgei_map = get(boost::edge_index,g);
