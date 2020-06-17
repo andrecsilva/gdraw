@@ -3,7 +3,7 @@
 #The following awk script essentially scale the points.
 awk '
 match($0,/pos="[^"]*"/){
-	scale = 72
+	scale = 18
 	head = substr($0,0,RSTART-1)
 	tail = substr($0,RSTART,RLENGTH)
 	rest = substr($0,RSTART+RLENGTH)
