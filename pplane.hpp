@@ -5,6 +5,7 @@
 
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/undirected_dfs.hpp>
+#include <boost/graph/boyer_myrvold_planar_test.hpp>
 
 //#define DEBUG
 
@@ -24,6 +25,14 @@ using vertex_t = typename boost::graph_traits<Graph>::vertex_descriptor;
 //Maybe edge_t instead of std::pair?
 //template <typename Graph>
 using embedding_t = typename std::vector<std::vector<std::pair<size_t,int>>>;
+
+template <typename Graph>	
+using rotations_t = typename std::vector< std::vector< edge_t<Graph> > >;
+
+template <typename Graph>
+using edge_signals_t = typename boost::iterator_property_map<
+	std::vector<int>::iterator,
+       	typename boost::property_map<Graph,boost::edge_index_t>::type>;
 
 //Reads embeddings from Myrvold and Campbell's program
 embedding_t readEmbedding(){
@@ -100,7 +109,7 @@ Tree<Graph> dfsTree(const Graph& g, const vertex_t<Graph>& root){
 	//auto ecmap = make_assoc_property_map(edge_color);
 
 	std::vector<boost::default_color_type> edge_color(num_edges(g));
-	auto edgei_map = get(boost::edge_index,g);
+	auto edgei_map = boost::get(boost::edge_index,g);
 	auto ecmap = make_iterator_property_map(edge_color.begin(), edgei_map);
 
 	undirected_dfs(g,
@@ -129,7 +138,7 @@ template <typename Graph>
 std::vector<int> getEdgeSignals(const Graph& g, embedding_t& embedding){
 	std::vector<int> signal(num_edges(g));
 
-	auto edgei_map = get(boost::edge_index,g);
+	auto edgei_map = boost::get(boost::edge_index,g);
 
 	for(size_t i =0; i< embedding.size(); i++)
 		for(auto e : embedding.at(i))
@@ -156,7 +165,7 @@ struct DoublePlanarVisitor : public boost::dfs_visitor<>{
 	DoublePlanarVisitor(Graph& h,size_t ogvcount, std::vector<int>& edges_signals, std::vector<int>& signal_from_root) : h{&h}, ogvcount{ogvcount}, edges_signals{&edges_signals}, signal_from_root{&signal_from_root} {};
 
 	void back_edge(const edge_t<Graph> e, const Graph& g){
-		auto edgei_map = get(boost::edge_index,g);
+		auto edgei_map = boost::get(boost::edge_index,g);
 
 		auto u = source(e,g);
 		auto v = target(e,g);
@@ -184,7 +193,7 @@ struct DoublePlanarVisitor : public boost::dfs_visitor<>{
 		add_edge(target(e,g),source(e,g),*h);
 
 		//TODO at what cost?
-		auto edgei_map = get(boost::edge_index,g);
+		auto edgei_map = boost::get(boost::edge_index,g);
 		signal_from_root->at(target(e,g)) = signal_from_root->at(source(e,g)) * edges_signals->at(boost::get(edgei_map,e));
 		
 		DEBUG(std::cout << "Tree_edge: " << e << std::endl;)
@@ -207,7 +216,7 @@ Graph planarDoubleCover(Graph& g, std::vector<int> edges_signals){
 	DoublePlanarVisitor<Graph> vis(h,ogvcount,edges_signals,signal_from_root);
 
 	std::vector<boost::default_color_type> edge_color(num_edges(g));
-	auto edgei_map = get(boost::edge_index,g);
+	auto edgei_map = boost::get(boost::edge_index,g);
 	auto ecmap = make_iterator_property_map(edge_color.begin(), edgei_map);
 
 	undirected_dfs(g,
@@ -216,7 +225,7 @@ Graph planarDoubleCover(Graph& g, std::vector<int> edges_signals){
 			.edge_color_map(ecmap));
 
 
-	auto edgei_map_h = get( boost::edge_index, h);
+	auto edgei_map_h = boost::get( boost::edge_index, h);
 
 	//TODO maybe preserve the edge indexes of the original graph?
 	typename boost::graph_traits<Graph>::edges_size_type ecount = 0;
@@ -224,7 +233,149 @@ Graph planarDoubleCover(Graph& g, std::vector<int> edges_signals){
 	typename boost::graph_traits<Graph>::edge_iterator ei;
 
 	for(ei = edges(h).first; ei!=edges(h).second; ++ei)
-		put(edgei_map_h,*ei,ecount++);
+		boost::put(edgei_map_h,*ei,ecount++);
 
 	return h;
 }
+
+/*
+ * Returns a double cover of g from a collection of edges.
+ * TODO return the projection?
+ */
+template <typename Graph, template<typename> typename EdgeContainer,typename Edge>
+Graph doubleCover(const Graph& g, const EdgeContainer<Edge>& xedges){
+	//copy graph with edges;
+	Graph h(g);
+
+	auto n = num_vertices(g);
+
+	for(size_t i=0;i<n;i++)
+		add_vertex(h);
+
+	auto h_ecount = num_edges(h);
+	auto edgei_map = boost::get(boost::edge_index,h);
+
+	//Adds more edges than it should, but they are removed
+	for(auto [ei,ei_end] = edges(g); ei!=ei_end;ei++){
+		auto u = target(*ei,g);
+		auto v = source(*ei,g);
+		auto f = add_edge(vertex(u+n,h),vertex(v+n,h),h).first;
+		boost::put(edgei_map,f,h_ecount++);
+	}
+					
+
+	for(auto e: xedges){
+		auto u = target(e,g);
+		auto v = source(e,g);
+		remove_edge(u,v,h);
+		remove_edge(vertex(u+n,h),vertex(v+n,h),h);
+		auto f1 = add_edge(u,vertex(v+n,h),h).first;
+		auto f2 = add_edge(vertex(u+n,h),v,h).first;
+		boost::put(edgei_map,f1,boost::get(edgei_map,e));
+		boost::put(edgei_map,f2,h_ecount++);
+	}
+		
+	return h;
+}
+
+template <typename Graph>
+std::vector<edge_t<Graph>> getCrossEdges(Graph& dpc,size_t inv){
+
+	std::vector<edge_t<Graph>> xedges;
+
+	for(auto[ei,ei_end]= edges(dpc); ei!=ei_end;ei++){
+		auto u = source(*ei,dpc);
+		auto v = target(*ei,dpc);
+		if((u < inv && v >=inv) ||
+		(v < inv && u >=inv  ))
+			xedges.push_back(*ei);
+	}
+
+	return xedges;
+
+}
+
+/*
+ * Returns an embedding of G in the Projective Plane from a
+ * double planar cover.
+ * TODO const the arguments? problems with the property maps...
+ */
+template <typename Graph>
+std::tuple<rotations_t<Graph>,std::vector<int>>
+embeddingFromDPC(Graph& g, Graph& dpc){
+
+
+
+	rotations_t<Graph> embedding(num_vertices(g));
+
+	rotations_t<Graph> embedding_dpc(num_vertices(dpc));
+
+	boyer_myrvold_planarity_test(
+			boost::boyer_myrvold_params::graph = dpc
+			,boost::boyer_myrvold_params::embedding = &embedding_dpc[0]
+			);
+
+	//for(auto u : embedding_dpc){
+	//	for(auto e : u)
+	//		std::cout << e << " ";
+	//	std::cout << std::endl;
+	//}
+	//	std::cout << std::endl;
+
+	auto n = num_vertices(g);
+
+	std::vector<edge_t<Graph>> xedges = getCrossEdges(dpc,n);
+
+	auto edgei_map = boost::get(boost::edge_index,g);
+
+//	std::vector<bool> in_xedges(num_edges(h),false);
+//
+//	auto in_xedges_map = make_iterator_property_map(in_xedges.begin(), edgei_map);
+//
+//
+//	for(auto e : xedges){
+//		put(in_xedges_map,e,true);
+//	}
+//
+	std::vector<int> edge_signals(num_edges(g),1);
+	//edge_signals_t<Graph> edge_signals_map (edge_signals.begin(),edgei_map);
+	edge_signals_t<Graph> edge_signals_map (edge_signals.begin(),edgei_map);
+
+	for(size_t i =0; i<n; i++){
+		for(auto e : embedding_dpc[i]){
+			auto u = target(e,dpc);
+			auto v = source(e,dpc);
+			int signal = 1;
+			if(u < n && v >=n){
+				v-=n;
+				signal = -1;
+			}
+			if(v < n && u >=n){
+				u-=n;
+				signal = -1;
+			}
+			auto f = edge(u,v,g).first;
+			//std::cout << "[" << boost::get(edgei_map,f) << "]" << f << " " << signal << std::endl;
+			embedding[i].push_back(f);
+			boost::put(edge_signals_map,f,signal);
+		}
+	}
+
+	//for(auto [ei,ei_end] = edges(g); ei!=ei_end; ++ei){
+	//	std::cout << "[" << boost::get(edgei_map,*ei) << "]" << *ei << " " << boost::get(edge_signals_map,*ei) << " ";
+	//}
+
+	//for (auto s : edge_signals)
+	//	std::cout << s << " ";
+	//std::cout << std::endl;
+
+	return {embedding,edge_signals};
+}
+
+/*
+ * Tries to find an embedding of g in the projective plane.
+ * Enumerates over all subsets of the edges not in t, find
+ * a double cover and test for planarity.
+ */
+template <typename Graph,typename Tree>
+void findProjectiveEmbedding(const Graph& g, Tree& t);
