@@ -1,9 +1,9 @@
 #include <iostream>
-
 #include <string>
-#include "pplane.hpp"
-#include "io.hpp"
-#include "draw.hpp"
+
+#include "include/gdraw/pplane.hpp"
+#include "include/gdraw/io.hpp"
+#include "include/gdraw/draw.hpp"
 
 using AdjList = boost::adjacency_list<
 boost::vecS
@@ -17,16 +17,16 @@ int main(){
 
 
 
-	AdjList g = readDOT<AdjList>();
+	AdjList g = gdraw::readDOT<AdjList>();
 
-	auto [found,dpc] = findDoublePlanarCover(g);
+	auto [found,dpc] = gdraw::findDoublePlanarCover(g);
 
 
 	if(found){
 		rotations_t<AdjList> rotations;
 		std::vector<int> edge_signals;
-		std::tie(rotations,edge_signals) = embeddingFromDPC(g,dpc);
-		auto xedges = getCrossEdges(dpc,num_vertices(g));
+		std::tie(rotations,edge_signals) = gdraw::embeddingFromDPC(g,dpc);
+		auto xedges = gdraw::getCrossEdges(dpc,num_vertices(g));
 
 		std::map<edge_t<AdjList>,std::string> edge_color;
 
@@ -34,13 +34,13 @@ int main(){
 			edge_color[e] = "red";
 
 		AdjList dpc_copy {dpc};
-		makeMaximalPlanar(dpc_copy);
+		gdraw::makeMaximalPlanar(dpc_copy);
 
-		auto cycle = findFacialCycle(dpc_copy);
+		auto cycle = gdraw::findFacialCycle(dpc_copy);
 
-		auto coordinates = tutteDraw(dpc_copy,cycle);
+		auto coordinates = gdraw::tutteDraw(dpc_copy,cycle);
 
-		writeDOT(std::cout,dpc,coordinates,{},{},edge_color);
+		gdraw::writeDOT(std::cout,dpc,coordinates,{},{},edge_color);
 	}else
 		std::cout << "No double planar cover found";
 

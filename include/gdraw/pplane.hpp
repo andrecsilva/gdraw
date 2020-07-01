@@ -1,3 +1,6 @@
+#ifndef PPLANE_HPP
+#define PPLANE_HPP
+
 #include <iostream>
 #include <vector>
 #include <map>
@@ -9,6 +12,8 @@
 
 #include "graph_types.hpp"
 #include "util.hpp"
+
+namespace gdraw{
 
 //Type for embedding scheme
 //Maybe edge_t instead of std::pair?
@@ -229,3 +234,8 @@ bool findProjectiveEmbedding(const Graph& g, std::tuple<rotations_t<Graph>,std::
 //TODO function to find minimal double cover -> min cross edges
 template <typename Graph>
 bool findMinDoubleCover(const Graph& g);
+
+}
+
+#endif //PPLANE_HPP
+

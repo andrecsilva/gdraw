@@ -1,3 +1,6 @@
+#ifndef UTIL_HPP
+#define UTIL_HPP
+
 #include <iostream>
 #include <functional>
 #include <algorithm>
@@ -6,6 +9,8 @@
 #include <boost/random/mersenne_twister.hpp>
 
 #include "graph_types.hpp"
+
+namespace gdraw{
 
 /***
  * Prints the vertices and edges of a graph.
@@ -198,4 +203,5 @@ std::vector<edge_t<Graph>> randomSpanningTree(const Graph& g){
 	return tree_edges;
 }
 
-
+} //namespace gdraw
+#endif //UTIL_HPP

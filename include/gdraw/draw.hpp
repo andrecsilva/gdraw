@@ -1,3 +1,4 @@
+#ifndef DRAW_HPP
 #include <string>
 
 #include <boost/numeric/ublas/matrix.hpp>
@@ -14,15 +15,9 @@
 
 #include "coordinates.hpp"
 
-template <typename Graph>	
-using edge_t = typename boost::graph_traits<Graph>::edge_descriptor;
+#include "graph_types.hpp"
 
-template <typename Graph>	
-using vertex_t = typename boost::graph_traits<Graph>::vertex_descriptor;
-
-template <typename Graph>	
-using rotations_t = typename std::vector< std::vector< edge_t<Graph> > >;
-
+namespace gdraw{
 
 template <typename Graph>
 void makeMaximalPlanar(Graph& g){
@@ -315,3 +310,7 @@ std::vector<coord_t> tutteDraw(const Graph& g, const std::vector<vertex_t<Graph>
 
 	return coordinates;
 }
+
+} //namespace
+
+#endif

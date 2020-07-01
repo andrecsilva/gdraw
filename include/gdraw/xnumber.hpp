@@ -1,22 +1,18 @@
+#ifndef XNUMBER_HPP
+#define XNUMBER_HPP
+
 #include <iostream>
 
 #include <boost/graph/boyer_myrvold_planar_test.hpp>
 
-
-template <typename Graph>	
-using edge_t = typename boost::graph_traits<Graph>::edge_descriptor;
-
-template <typename Graph>	
-using vertex_t = typename boost::graph_traits<Graph>::vertex_descriptor;
-
-template <typename Graph>	
-using rotations_t = typename std::vector< std::vector< edge_t<Graph> > >;
-
-
+#include "graph_types.hpp"
 
 /**
  * Removes isolated vertices (i.e. degree 0) from the graph.
  */
+
+namespace gdraw{
+
 template <typename Graph>
 void removeIsolatedVertices(Graph& g){
 	//Reverse order, as the indexes are rearranged in the graph to make it contiguous
@@ -38,7 +34,6 @@ bool isPlanar(const Graph& g
 	     ) noexcept{
 	
 	//TODO change this to make_iterator...
-	//From the boost example, somehow gets an iterator of rotations out of this
 	using rotations_pmap_t = typename boost::iterator_property_map <
 				typename rotations_t<Graph>::iterator
 				,typename boost::property_map <Graph,boost::vertex_index_t>::type
@@ -295,5 +290,5 @@ bool leqXnumberk(Graph& g, rotations_t<Graph>& _out_rotations,  int k) noexcept{
 	return answer;
 }
 
-
-
+} //namespace
+#endif //XNUMBER_HPP

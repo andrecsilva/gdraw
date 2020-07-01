@@ -4,18 +4,13 @@
 
 #include "coordinates.hpp"
 
-template <typename Graph>	
-using edge_t = typename boost::graph_traits<Graph>::edge_descriptor;
-
-template <typename Graph>	
-using vertex_t = typename boost::graph_traits<Graph>::vertex_descriptor;
-
-template <typename Graph>	
-using rotations_t = typename std::vector< std::vector< edge_t<Graph> > >;
+#include "graph_types.hpp"
 
 /*
  * Reads a DOT file from stdin and returns the graph.
  */
+
+namespace gdraw{
 
 template <typename Graph>
 Graph readDOT() noexcept
@@ -152,3 +147,4 @@ void writeDOT(std::ostream& out,
 
 }
 
+}
