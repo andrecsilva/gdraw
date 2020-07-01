@@ -15,6 +15,9 @@ xnumber: xnumber.cpp include/gdraw/xnumber.hpp include/gdraw/util.hpp include/gd
 finddpc: finddpc.cpp include/gdraw/pplane.hpp include/gdraw/io.hpp include/gdraw/draw.hpp
 	$(CXX) $(CXXFLAGS) $(STD) -o $@ finddpc.cpp $(LDIR) $(LDLIBS)
 
+findppembedding: findppembedding.cpp include/gdraw/pplane.hpp include/gdraw/io.hpp include/gdraw/draw.hpp
+	$(CXX) $(CXXFLAGS) $(STD) -o $@ findppembedding.cpp $(LDIR) $(LDLIBS)
+
 unit_test: xnumber.hpp util.hpp unit_test.cpp
 	$(CXX) -o $@ unit_test.cpp $(LDIR) $(LDLIBS) $(LDBOOSTTEST)
 

@@ -221,7 +221,7 @@ std::tuple<bool,Graph> findDoublePlanarCover(const Graph& g){
  * Exponential on the number of edges of g, but should be quite fast.
  */
 template <typename Graph>
-bool findProjectiveEmbedding(const Graph& g, std::tuple<rotations_t<Graph>,std::vector<int>> out_embedding){
+bool findProjectiveEmbedding(const Graph& g, std::tuple<rotations_t<Graph>&,std::vector<int>&> out_embedding){
 
 	auto [found,dpc] = findDoublePlanarCover(g);
 
