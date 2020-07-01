@@ -1,5 +1,11 @@
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/properties.hpp>
+#include <iostream>
+#include <functional>
+#include <algorithm>
+
+#include <boost/graph/random_spanning_tree.hpp>
+#include <boost/random/mersenne_twister.hpp>
+
+#include "graph_types.hpp"
 
 /***
  * Prints the vertices and edges of a graph.
@@ -97,4 +103,99 @@ Graph getKpq(int p,int q) noexcept
 
 	return Kpq;
 }
+
+bool enumerate(std::vector<bool>& mask,
+		std::function<bool(std::vector<bool>&)> execute,
+		size_t& min_size,
+	       	size_t& max_size,
+		size_t& size,
+		size_t& index,
+		bool& found)
+{
+
+	if(!found){
+		if(index<mask.size()){
+			if(size < max_size){
+				mask[index] = true;
+				size++;
+				index++;
+				enumerate(mask,execute,min_size,max_size,size,index,found);
+				mask[index-1] = false;
+				size--;
+				enumerate(mask,execute,min_size,max_size,size,index,found);
+				index--;
+			}else
+				found = execute(mask);
+		}
+		else
+			if(size>=min_size)
+				found = execute(mask);
+
+	}
+	return found;
+}
+
+/*
+ * Executes execute for each subset of cont with size between min_size and max_size.
+ * The function execute should take the Container cont and a mask that represents the sub
+ * set of cont.
+ */
+template <typename Container>
+bool boundedSubsetsExecute(Container& cont,
+		std::function<bool(Container&,std::vector<bool>&)> execute,
+		size_t min_size,
+		size_t max_size=0){
+	auto bound_execute = std::bind(execute,cont,std::placeholders::_1);
+	std::vector<bool> mask (cont.size(),false);
+	size_t size = 0;
+	size_t index = 0;
+	bool found = false;
+	return enumerate(mask,bound_execute,min_size,max_size,index,size,found);
+}
+
+/*
+ * Take a set of edges of g and returns the edges not in the set.
+ */
+template <typename Graph, typename Container>
+std::vector<edge_t<Graph>> coSubgraphEdges(const Graph& g, Container& subgraph_edges){
+	std::vector<edge_t<Graph>> cs_edges;
+
+	auto edgei_map = get(boost::edge_index,g);
+
+	std::vector<bool> in_subgraph (num_edges(g),false);
+	auto in_subgraph_map = make_iterator_property_map(in_subgraph.begin(), edgei_map);
+
+	for(auto& e : subgraph_edges){
+		put(in_subgraph_map,e,true);
+	}
+
+	for(auto [ei,ei_end] = edges(g);ei!=ei_end;ei++){
+		edge_t<Graph> e = *ei;
+		if(!get(in_subgraph_map,e))
+			cs_edges.push_back(e);
+	}
+	return cs_edges;
+}
+
+/*
+ * Returns a random spanning tree of g.
+ * It is just a wrap around Boost's function.
+ */
+template <typename Graph>
+std::vector<edge_t<Graph>> randomSpanningTree(const Graph& g){	
+	std::vector<vertex_t<Graph>> parent(num_vertices(g),boost::graph_traits<Graph>::null_vertex());
+	std::vector<edge_t<Graph>> tree_edges;
+
+	boost::mt19937 gen(time(0));
+	boost::random_spanning_tree(g,gen,boost::predecessor_map(&parent[0]));
+
+	for (auto [vi,vi_end] = vertices(g); vi!=vi_end; vi++){
+		if(parent[*vi] != boost::graph_traits<Graph>::null_vertex()){
+			tree_edges.push_back(edge(*vi,parent[*vi],g).first);
+		}
+	}
+
+	return tree_edges;
+}
+
 
