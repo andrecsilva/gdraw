@@ -18,11 +18,11 @@ finddpc: finddpc.cpp include/gdraw/pplane.hpp include/gdraw/io.hpp include/gdraw
 findppembedding: findppembedding.cpp include/gdraw/pplane.hpp include/gdraw/io.hpp include/gdraw/draw.hpp
 	$(CXX) $(CXXFLAGS) $(STD) -o $@ findppembedding.cpp $(LDIR) $(LDLIBS)
 
-unit_test: xnumber.hpp util.hpp unit_test.cpp
-	$(CXX) -o $@ unit_test.cpp $(LDIR) $(LDLIBS) $(LDBOOSTTEST)
+unit_test: unit_test.cpp include/gdraw/xnumber.hpp include/gdraw/util.hpp include/gdraw/io.hpp include/gdraw/pplane.hpp 
+	$(CXX) $(STD) -g -o $@ unit_test.cpp $(LDIR) $(LDLIBS) $(LDBOOSTTEST)
 
 test: include/gdraw/coordinates.hpp include/gdraw/pplane.hpp include/gdraw/xnumber.hpp include/gdraw/util.hpp include/gdraw/draw.hpp include/gdraw/io.hpp test.cpp
-	$(CXX) -std=c++1z -o quick_test -g test.cpp $(LDIR) $(LDLIBS)
+	$(CXX) $(STD) -g -o quick_test test.cpp $(LDIR) $(LDLIBS)
 
 .PHONY: clean
 .PHONY: quick_test
