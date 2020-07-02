@@ -42,7 +42,7 @@ int main(){
 
 		gdraw::writeDOT(std::cout,dpc,coordinates,{},{},edge_color);
 	}else
-		std::cout << "No double planar cover found";
+		std::cout << "No double planar cover found" << std::endl;
 
 
 }
