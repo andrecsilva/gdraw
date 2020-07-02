@@ -4,9 +4,13 @@ A small collection of mini-libraries and scripts to draw graphs:
 
 `xnumber.hpp` - Template library over the BOOST Graph Library that calculates the crossing number cr(G) of a graph G and "draws" (i.e. output vertices coordinates) graphs. It uses small improvement of the usual naive algorithm.
 
+`pplane.hpp` - Template library concerning algorithms for graphs that are embeddable in the projective plane. Currently has an algorithm to calculate a double planar cover of a graph based on a embedding (supplied externally).
+
 `util.hpp` - Has a bunch of useful functions. 
 
-`main.cpp` - Reads from stdin a graph in DOT format as a input and outputs to stdout a graph in DOT format. The vertices of the output have the `pos` attribute with the coordinates. The crossing edges also have a `pos` attribute specifying a cubic spline. 
+`io.hpp` - Reads and write graphs in DOT format
+
+`main.cpp` - Reads from stdin a number k and a graph in DOT format and outputs a graph in DOT format with <=k crossings, if one exists. The vertices of the output have the `pos` attribute with the coordinates. The crossing edges also have a `pos` attribute specifying a cubic spline. 
 
 `tikz.py` - A mini-library to produce TikZ drawings. 
 
