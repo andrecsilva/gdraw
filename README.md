@@ -1,51 +1,52 @@
 # GDraw
 
-A small collection of mini-libraries and scripts to draw graphs:
+A small collection of mini-libraries and scripts to planarize and draw graphs.
 
-`xnumber.hpp` - Template library over the BOOST Graph Library that calculates the crossing number cr(G) of a graph G and "draws" (i.e. output vertices coordinates) graphs. It uses small improvement of the usual naive algorithm.
+What it does:
 
-`pplane.hpp` - Template library concerning algorithms for graphs that are embeddable in the projective plane. Currently has an algorithm to calculate a double planar cover of a graph based on a embedding (supplied externally).
-
-`util.hpp` - Has a bunch of useful functions. 
-
-`io.hpp` - Reads and write graphs in DOT format
-
-`main.cpp` - Reads from stdin a number k and a graph in DOT format and outputs a graph in DOT format with <=k crossings, if one exists. The vertices of the output have the `pos` attribute with the coordinates. The crossing edges also have a `pos` attribute specifying a cubic spline. 
-
-`tikz.py` - A mini-library to produce TikZ drawings. 
-
-`draw.py` - Reads a graph from stdin with the DOT format and outputs a TikZ document for the drawing. Assumes all the vertices of the input have the `pos` attribute. Edges with a `pos` attribute are drawn as a combination of cubic splines.
-
-`draw.sh` - A tiny awk+bash script that draws the graph with the same format as above using neato from Graphviz.
+* Find drawings of graphs with k crossings or less (naive O(n^k) algorithm with some improvements, see [1]);
+* Find all possible embeddings/double planar covers of a 3-connected graph in the projective plane (See [2]);
+* Draw graphs using two different methods (Tutte's [3] and Chrobak-Payne via Boost);
+* Output the drawings in Tex (Tikz) or Pdf (or more if you're willing to change the parameter in the script);
+* A bunch of smaller things not worth metioning.
 
 # Build
 
 Make sure you have BOOST and change `LDIR` in the makefile to point to BOOST's location. Just `make`.
 
+The `draw.sh` script uses `neato` from graphviz and `awk`, so make sure you have those; `drawTikz.py` uses python3.
+
 # Example of Usage 
 
 ```
-echo "3" | cat - in_graph.dot | ./main | ./draw.sh > out_drawing.pdf
+./xnumber 3 < k6.dot | ./draw.sh > k6.pdf
+./finddpc < k6.dot | ./drawTikz.py > k6.tex
+./findppembedding < k6.dot
 ```
 
-# Example drawing (an optimal drawing of K<sub>6</sub> with 3 crossings)
+# Some Examples (Optimal drawing of K<sub>6</sub> and a double planar cover of it)
 
-![alt text][k6drawing]
+![alt text][k6drawing] ![alt text][k6dpc]
 
-[k6drawing]: https://github.com/andrecsilva/gdraw/blob/master/example.svg "Optimal drawing of K6"
+[k6drawing]: https://github.com/andrecsilva/gdraw/blob/master/k6opt.svg "Optimal drawing of K6."
+[k6dpc]: https://github.com/andrecsilva/gdraw/blob/master/k6dpc.svg "Double planar cover of K6, the red edges are the edges used to generate the cover." 
 
 # FAQ and Known Problems
 
 ### Why?
 
-A pet project to get used to BOOST. If you want something more serious: [OGDF](https://ogdf.uos.de/).
-
+A pet project to test some conjectures and get used to BOOST/C++. If you want something more serious: [OGDF](https://ogdf.uos.de/).
 
 ### The drawings are ugly.
 
-It uses the Chobak-Payne algorithm (known for its ugliness) to obtain the coordinates.
+I have yet to find a drawing algorithm in the literature that does output "nice" drawings. Tutte's algorithm seems the best I've found.
 
+You should use these drawings as a starting point and then modify them using your favorite program.
 
-### The drawings have more crossings than they should.
+# References
 
-For now the crossing edges can cross more than they should due to how the controls points are calculated. Should not occur often. 
+[1] Silva, André Carvalho. "Graphs with few crossings and the crossing number of Kp,q in topological surfaces" (2018).
+
+[2] Negami, Seiya. "Enumeration of projective-planar embeddings of graphs." Discrete mathematics 62.3 (1986): 299-306.
+
+[3] Tutte, William Thomas. "How to draw a graph." Proceedings of the London Mathematical Society 3.1 (1963): 743-767.
