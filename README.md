@@ -5,10 +5,11 @@ A small collection of mini-libraries and scripts to planarize and draw graphs.
 What it does:
 
 * Find drawings of graphs with k crossings or less (naive O(n^k) algorithm with some improvements, see [1]);
-* Find all possible embeddings/double planar covers of a 3-connected graph in the projective plane (See [2]);
+* Find embeddings in the projective plane/double planar cover for a given graph (exponential, but somewhat fast);
+  * For 3-connected ones, it's possible to list all of them (See [2]);
 * Draw graphs using two different methods (Tutte's [3] and Chrobak-Payne via Boost);
 * Output the drawings in Tex (Tikz) or Pdf (or more if you're willing to change the parameter in the script);
-* A bunch of smaller things not worth metioning.
+* A bunch of smaller things not worth mentioning.
 
 # Build
 
