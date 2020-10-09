@@ -1,9 +1,8 @@
-#include "include/gdraw/io.hpp"
-#include "include/gdraw/draw.hpp"
-#include "include/gdraw/xnumber.hpp"
+#include <gdraw/io.hpp>
+#include <gdraw/draw.hpp>
+#include <gdraw/xnumber.hpp>
 
 #include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/graphviz.hpp>
 
 using AdjList = boost::adjacency_list<
 	boost::vecS
@@ -23,21 +22,15 @@ int main(int argc, char *argv[]){
 	}
 	int k = atoi(argv[1]);
 	//std::cin >> k;
-	AdjList g = gdraw::readDOT<AdjList>();
-	AdjList gp = AdjList(g);
+	auto g = gdraw::GraphWrapper<AdjList>{gdraw::readDOT<AdjList>()};
 
-	rotations_t<AdjList> rotations;
+	auto n = num_vertices(g.getGraph());
 
-	bool answer =
-	       	gdraw::leqXnumberk(gp,rotations,k);
+	auto result = gdraw::planarXNumber(std::move(g),k);
 
-	if(answer){
-		gdraw::makeMaximalPlanar(gp);
-
-		auto cycle = gdraw::findFacialCycle(gp);
-
-		auto coordinates = gdraw::tutteDraw(gp,cycle);
-		gdraw::writeDOT(std::cout,g,coordinates,{},gdraw::getEdgeCoordinates(g,gp,rotations,coordinates));
+	if(result){
+		auto dg = gdraw::drawFlattenedGraph(std::move(result.value()),n);
+		gdraw::writeDOT(dg);
 	}
 
 	return 0;

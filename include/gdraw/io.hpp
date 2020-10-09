@@ -1,13 +1,13 @@
+#pragma once
+
 #include <string>
 
 #include <boost/graph/graphviz.hpp>
 
-#include "coordinates.hpp"
-
-#include "graph_types.hpp"
+#include <gdraw/graph_types.hpp>
 
 /*
- * Reads a DOT file from stdin and returns the graph.
+ * Reads a DOT files from stdin and returns the graph.
  */
 
 namespace gdraw{
@@ -38,62 +38,6 @@ Graph readDOT() noexcept
 	return g;
 }
 
-template <class Pos,class Color>
-class PosColorEdgeWriter{
-	public:
-		PosColorEdgeWriter(Pos _pos,Color _color) : pos(_pos), color(_color) {}
-		template <class Edge>
-			void operator()(std::ostream& out, const Edge& e){ 
-
-				if((pos.count(e) > 0) || (color.count(e) > 0)){
-					out << "[";
-					if(pos.count(e) > 0)
-						out << "pos=\"" << pos.at(e) << "\"";
-					if(color.count(e) > 0){
-						if(pos.count(e) >0)
-							out << ",";
-						out << "color=" << color.at(e);
-					}
-					out << "]";
-				}
-			}
-	private:
-		Pos pos;
-		Color color;
-
-};
-
-template <class Pos,class Color>
-class PosColorVertexWriter{
-	public:
-		PosColorVertexWriter(Pos _pos,Color _color) : pos(_pos), color(_color) {}
-		template <class Vertex>
-			void operator()(std::ostream& out, const Vertex& v){ 
-
-					out << "[";
-					out << "pos=\"" << pos.at(v) << "\"";
-					if(!color.empty() && color.at(v) != ""){
-						out << ",";
-						out << "color=" << color.at(v);
-					}
-					out << "]";
-			}
-	private:
-		Pos pos;
-		Color color;
-
-};
-/*
- * Given a pair of endpoints and a crossing point it, returns a cubic spline with control points with distance epsilon from the crossing point.
- */
-cubicSpline
-crossingSpline(const coord_t& xpoint, const std::pair<coord_t,coord_t>& e, const float epsilon=0.2) noexcept {
-	const coord_t p1 {xpoint.x + (e.first.x - xpoint.x ) * epsilon, xpoint.y +  (e.first.y - xpoint.y) * epsilon};
-	//coord_t p2 {xpoint.x + (e.first.x - xpoint.x ) * epsilon/2, xpoint.y +  (e.first.y - xpoint.y) * epsilon/2};
-	const coord_t p2 {xpoint.x + (e.second.x - xpoint.x ) * epsilon, xpoint.y +  (e.second.y - xpoint.y) * epsilon};
-	cubicSpline spline { e.first, p1, p2, e.second};
-	return spline;
-}
 
 
 template <typename Graph>
@@ -134,17 +78,62 @@ std::map<edge_t<Graph>,cubicSpline> getEdgeCoordinates(const Graph& g,
 }
 
 template <typename Graph>
-void writeDOT(std::ostream& out,
-	       	const Graph& g,
-	       	const std::vector<coord_t>& coordinates,
-		const std::vector<std::string>& vertex_colors = {},
-		const std::map<edge_t<Graph>,cubicSpline>& xcoordinates = {},
-		const std::map<edge_t<Graph>,std::string>& edge_colors = {}) noexcept{
-
-	PosColorVertexWriter<std::vector<coord_t>,std::vector<std::string>> vpw{coordinates,vertex_colors};
-	PosColorEdgeWriter<std::map<edge_t<Graph>,cubicSpline>,std::map<edge_t<Graph>,std::string>> epw{xcoordinates,edge_colors};
-	boost::write_graphviz(out,g,vpw,epw);
-
+void writeDOT(const DrawnGraph<Graph>& g, std::ostream& out=std::cout){
+	auto vertex_pos_writer = [&g](auto&& out,auto&& v){
+		out << "pos=\"" << g.coordinates[v] << "\"";
+	};
+	auto edge_pos_writer = [&g](auto&& out,auto&& e){
+		if(g.edge_coordinates.contains(e))
+			out << "pos=\"" << g.edge_coordinates.at(e) << "\"";
+	};
+	auto edge_color_writer = [&g](auto&& out,auto&& e){
+		if(g.edge_colors.contains(e)){
+			out << "color=" << g.edge_colors.at(e);
+		}
+	};
+	auto vertex_color_writer = [&g](auto&& out,auto&& v){
+		if(!g.vertex_colors.empty() && g.vertex_colors[v]!=""){
+			out << "color=" << g.vertex_colors[v];
+		}
+	};
+	auto vertex_writer = [&vertex_pos_writer,&vertex_color_writer](auto&& out,auto&& v){
+		std::ostringstream pos;
+		std::ostringstream color;
+		vertex_pos_writer(pos,v);
+		vertex_color_writer(color,v);
+		//std::cout << "Pos: " << pos.str() << std::endl;
+		//std::cout << "color: " << color.str() << std::endl;
+		if(pos.str()!="" || color.str()!=""){
+			out << '[';
+			out << pos.str();
+			if(color.str()!="" && pos.str()!="")
+				out << ',';
+			out << color.str();
+			out << ']';
+		}
+	};
+	auto edge_writer = [&edge_pos_writer,&edge_color_writer](auto&& out,auto&& e){
+		std::ostringstream pos;
+		std::ostringstream color;
+		edge_pos_writer(pos,e);
+		edge_color_writer(color,e);
+		if(pos.str()!="" || color.str()!=""){
+			out << '[';
+			out << pos.str();
+			if(color.str()!="" && pos.str()!="")
+				out << ',';
+			out << color.str();
+			out << ']';
+		}
+	};
+	boost::write_graphviz(out,g.getGraph(),vertex_writer,edge_writer);
 }
+
+template<template<typename> typename Wrapper,typename Graph>
+requires AsGraphWrapper<Wrapper,Graph>
+void writeDOT(const Wrapper<Graph> g,std::ostream& out=std::cout){
+	boost::write_graphviz(out,g.getGraph());
+}
+
 
 }

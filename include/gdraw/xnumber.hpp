@@ -1,11 +1,11 @@
-#ifndef XNUMBER_HPP
-#define XNUMBER_HPP
+#pragma once 
 
 #include <iostream>
+#include <variant>
 
-#include <boost/graph/boyer_myrvold_planar_test.hpp>
-
-#include "graph_types.hpp"
+#include <gdraw/graph_types.hpp>
+#include <gdraw/util.hpp>
+#include <gdraw/planar_graphs.hpp>
 
 /**
  * Removes isolated vertices (i.e. degree 0) from the graph.
@@ -13,282 +13,241 @@
 
 namespace gdraw{
 
-template <typename Graph>
-void removeIsolatedVertices(Graph& g){
-	//Reverse order, as the indexes are rearranged in the graph to make it contiguous
-	for(int i = num_vertices(g)-1; i>0 ;i--){
-		auto vi = vertex(i,g);
-		if(out_degree(vi,g)==0)
-			remove_vertex(vi,g);
-	}
-}
-
-/**
- * A simple wrapper for the boyer_myrvold_planarity_test in boost. 
- * It assumes the graph has the edge_index and vertex_index as internal properties.
- */
-template <typename Graph>
-bool isPlanar(const Graph& g
-		,std::vector < edge_t<Graph> >&  kuratowski_edges
-		,rotations_t<Graph>& rotations
-	     ) noexcept{
-	
-	//TODO change this to make_iterator...
-	using rotations_pmap_t = typename boost::iterator_property_map <
-				typename rotations_t<Graph>::iterator
-				,typename boost::property_map <Graph,boost::vertex_index_t>::type
-				>;
-	
-	rotations_pmap_t rotations_pmap(rotations.begin(),get(boost::vertex_index,g));
-
-	return boyer_myrvold_planarity_test(
-		boost::boyer_myrvold_params::graph = g
-		,boost::boyer_myrvold_params::embedding = rotations_pmap
-		,boost::boyer_myrvold_params::kuratowski_subgraph = std::back_inserter(kuratowski_edges)
-		);
+inline auto disjointEdges(auto&& g,auto&& e,auto&& f){
+	auto [u,v] = endpoints(g.getGraph(),e);
+	auto [a,b] = endpoints(g.getGraph(),f);
+	return (u != a && u != b && v!=a && v!=b);
 }
 
 template <typename Graph>
-bool isPlanar(const Graph& g
-		,rotations_t<Graph>& rotations
-	     ) noexcept{
-	
-	//Concept type class using rotations_t
-	using rotations_pmap_t = typename boost::iterator_property_map <
-				typename rotations_t<Graph>::iterator
-				,typename boost::property_map <Graph,boost::vertex_index_t>::type
-				>;
-	
-	rotations_pmap_t rotations_pmap(rotations.begin(),get(boost::vertex_index,g));
+auto planarXNumber(GraphWrapper<Graph> g, size_t k) -> std::optional<PlanarGraph<Graph>>{
+	auto ecount = num_edges(g.getGraph());
+	auto vcount = num_vertices(g.getGraph());
+	std::vector<edge_t<Graph>> edges_by_index(ecount+2*k);
+	auto edgei_map = get( boost::edge_index, g.getGraph());
 
-	return boyer_myrvold_planarity_test(
-		boost::boyer_myrvold_params::graph = g
-		,boost::boyer_myrvold_params::embedding = rotations_pmap
-		);
-}
-
-/**
- * A simple wrapper for the boyer_myrvold_planarity_test in boost. 
- * It assumes the graph has the edge_index and vertex_index as internal properties.
- */
-template <typename Graph>
-bool isPlanar(const Graph& g) noexcept{
-
-	return boyer_myrvold_planarity_test(
-		boost::boyer_myrvold_params::graph = g
-		);
-}
-
-template <typename Graph>
-edge_t<Graph> addEdgeWithIndex(Graph& g
-		,const vertex_t<Graph>& target
-		,const vertex_t<Graph>& source
-		,const int& index
-		,std::vector<edge_t<Graph>>& edges_by_id
-	       	,typename boost::property_map<Graph, boost::edge_index_t>::type& edgei_map
-		){
-	edge_t<Graph> e = add_edge(target,source,g).first;
-	put(edgei_map,e,index);
-	edges_by_id.at(index) = e;
-	return e;
-}
-
-template <typename Graph>
-void fakeCross(Graph& g
-		,edge_t<Graph>& ei
-		,const int ei_index
-		,edge_t<Graph>& ej
-		,const int ej_index
-		,std::vector<edge_t<Graph>>& edges_by_id
-	       	,typename boost::property_map<Graph, boost::edge_index_t>::type& edgei_map
-		,typename boost::graph_traits<Graph>::vertices_size_type& vcount
-		,typename boost::graph_traits<Graph>::edges_size_type& ecount
-		){
-
-	//caution: this invalidates descriptors..
-	remove_edge(ei,g);
-	remove_edge(ej,g);
-
-	//reuses original indexes
-	vertex_t<Graph> v = vertex(vcount,g);
-	addEdgeWithIndex(g,source(ei,g),v,ei_index,edges_by_id,edgei_map);
-	addEdgeWithIndex(g,source(ej,g),v,ej_index,edges_by_id,edgei_map);
-
-	addEdgeWithIndex(g,target(ei,g),v,ecount++,edges_by_id,edgei_map);
-	addEdgeWithIndex(g,target(ej,g),v,ecount++,edges_by_id,edgei_map);
-	vcount++;
-}
-
-
-/*
- * Checks if the graph has crossing number 1.
- * If it does, rotations contains the order type of the graph and the crossing vertices.
- * Modifies the graph.
- */
-template <typename Graph>
-bool leqXnumber1(Graph& g
-	       	,rotations_t<Graph>& _out_rotations
-		,std::vector<edge_t<Graph>>& edges_by_id
-	       	,typename boost::property_map<Graph, boost::edge_index_t>::type& edgei_map
-		,typename boost::graph_traits<Graph>::vertices_size_type& vcount
-		,typename boost::graph_traits<Graph>::edges_size_type& ecount
-		) noexcept{
-
-	std::vector<edge_t<Graph>> kuratowski_edges;
-
-	rotations_t<Graph> embedding {num_vertices(g)};
-
-	//TODO a graph with only one crossing has at most 3n-5 edges
-	if(isPlanar(g,kuratowski_edges, embedding)){
-		_out_rotations = std::move(embedding);
-		return true;
+	for([[maybe_unused]]auto&& _ : std::views::iota((size_t)0,k)){
+		add_vertex(g.getGraph());
 	}
 
-	//embedding.resize(num_vertices(g)+1);
-	//Essentially the same as the general case, but we use the edges of the kuratowski subgraph instead
-	for(std::size_t i =0; i < kuratowski_edges.size(); i++){
-		edge_t<Graph> ei = edges_by_id.at(i);
-		for(std::size_t j = i+1; j < kuratowski_edges.size() ;  j++){
-			edge_t<Graph> ej = edges_by_id.at(j);
-			//std::cout << ei << " x " << ej << std::endl;
-			if (target(ei,g) != source(ej,g)
-					&& target(ei,g) != target(ej,g)
-					&& source(ei,g) != source(ej,g)
-					&& source(ei,g) != target(ej,g)
-			   ){
-
-				vertex_t<Graph> eit = target(ei,g);
-				vertex_t<Graph> eis = source(ei,g);
-
-				vertex_t<Graph> ejt = target(ej,g);
-				vertex_t<Graph> ejs = source(ej,g);
-
-				fakeCross(g,ei,i,ej,j,edges_by_id,edgei_map,vcount,ecount);
-
-				if (isPlanar(g,embedding)){
-					_out_rotations = std::move(embedding);
-					return true;
-				}
-
-				//Uncross
-				//TODO O(E/V) here
-				//TODO This could be constant time by pop()ing the vertices
-				vcount--;
-				clear_vertex(vertex(vcount,g),g);
-				ecount-=2;
-
-				//revalidate edge descriptors
-				ei = addEdgeWithIndex(g,eis,eit,i,edges_by_id,edgei_map);
-				ej = addEdgeWithIndex(g,ejs,ejt,j,edges_by_id,edgei_map);
-			}
-			//else std::cout << "Not disjoint" << std::endl;
-		}
+	for(auto&& e : range(edges(g.getGraph()))){
+		auto ei = get(edgei_map,e);
+		edges_by_index[ei] = e;
 	}
-	return false;
 
+	auto add_edge_with_index = [&g,&edgei_map,&edges_by_index,&ecount](auto&& u, auto&& v, auto&& ei){
+			auto h = add_edge(u,v,g.getGraph()).first;
+			boost::put(edgei_map,h,ei);
+			edges_by_index[ei] = h;
+			return h;
+	};
+
+	auto fake_cross = [&g,&vcount,&add_edge_with_index,&ecount](auto&& e,auto&& f,auto&& ei, auto&& fi){
+		//std::cout << e << 'x' << f << std::endl;
+		//printGraph(g);
+		auto [u,v] = endpoints(g.getGraph(),e);
+		auto [a,b] = endpoints(g.getGraph(),f);
+
+		//auto e2 = edge(u,v,g.getGraph()).first;
+		//auto f2 = edge(a,b,g.getGraph()).first;
+
+		auto w = vertex(vcount,g.getGraph());
+
+		remove_edge(e,g.getGraph());
+		remove_edge(f,g.getGraph());
+
+		add_edge_with_index(w,u,ei);
+		add_edge_with_index(w,a,fi);
+		add_edge_with_index(w,v,ecount++);
+		add_edge_with_index(w,b,ecount++);
+
+
+		vcount++;
+
+	};
+
+	auto uncross = [&g,&vcount,&ecount,&add_edge_with_index](auto&& e, auto&& f,auto&& ei,auto&& fi){
+		//std::cout << "-" << e << 'x' << f << std::endl;
+		vcount--;
+		clear_vertex(vertex(vcount,g.getGraph()),g.getGraph());
+		ecount-=2;
+
+		auto [u,v] = endpoints(g.getGraph(),e);
+		auto [a,b] = endpoints(g.getGraph(),f);
+
+		//revalidate descriptors...
+		e = add_edge_with_index(u,v,ei);
+		f = add_edge_with_index(a,b,fi);
+	};
+
+	//Translates the Variant result into an optional
+	auto planar_test = [](auto&& g){
+		auto v = gdraw::planeEmbedding(std::move(g));
+		std::optional<PlanarGraph<Graph>> pg;
+		if(std::holds_alternative<PlanarGraph<Graph>>(v))
+			pg = std::move(std::get<0>(v));
+		else//Move the graph back
+			g = std::move(std::get<1>(v));
+		return pg;
+	};
+
+	auto result = planarXNumberRecursion(g,k,edges_by_index,planar_test,fake_cross,uncross);
+	if(result)
+		removeIsolatedVertices(result.value().getGraph());
+	return result;
 }
 
-
 template <typename Graph>
-bool leqXnumberkRecursion(Graph& g
-	       	,rotations_t<Graph>& _out_rotations
-		,std::vector<edge_t<Graph>>& edges_by_id
-	       	,typename boost::property_map<Graph, boost::edge_index_t>::type& edgei_map
-		,typename boost::graph_traits<Graph>::vertices_size_type& vcount
-		,typename boost::graph_traits<Graph>::edges_size_type& ecount
-		,int k
-		) noexcept{
-	//std::cout << "Depth: " << k << std::endl;
-
+auto planarXNumberRecursion(GraphWrapper<Graph>& g, size_t k, std::vector<edge_t<Graph>>& edges_by_index, auto& planar_test, auto& fake_cross, auto& uncross){
+	//std::cout << "k = "  << k<< std::endl;
 	if(k<=1){
-		return leqXnumber1(g,_out_rotations,edges_by_id,edgei_map,vcount,ecount);
-	}
-	if(leqXnumberkRecursion(g,_out_rotations,edges_by_id,edgei_map,vcount,ecount,k-1))
-		return true;
-	else{
-		//std::cout << "Depth: " << k << std::endl;
-		auto ecount  = num_edges(g);
-		for(std::size_t i =0; i < ecount; i++){
-			edge_t<Graph> ei = edges_by_id.at(i);
-			for(std::size_t j = i+1; j < ecount ;  j++){
-				edge_t<Graph> ej = edges_by_id.at(j);
-				//std::cout << ei << " x " << ej << std::endl;
-				if (target(ei,g) != source(ej,g)
-						&& target(ei,g) != target(ej,g)
-						&& source(ei,g) != source(ej,g)
-						&& source(ei,g) != target(ej,g)
-				   ){
+		auto variant_result = gdraw::planeEmbedding(std::move(g));
+		if(std::holds_alternative<PlanarGraph<Graph>>(variant_result))//xnumber = 0?
+			return std::optional<PlanarGraph<Graph>>(std::move(std::get<0>(variant_result)));
+		//We now use the Edges of the Kuratowski Subgraph instead of every pair of edges
+		auto& neg = std::get<1>(variant_result);
+		auto kuratowski_subgraph = std::move(neg.forbidden_subgraph);
+		g = std::move(neg);
+		
+		auto edgei_map = boost::get(boost::edge_index,g.getGraph());
 
-					vertex_t<Graph> eit = target(ei,g);
-					vertex_t<Graph> eis = source(ei,g);
-
-					vertex_t<Graph> ejt = target(ej,g);
-					vertex_t<Graph> ejs = source(ej,g);
-
-					fakeCross(g,ei,i,ej,j,edges_by_id,edgei_map,vcount,ecount);
-
-					if (leqXnumberkRecursion(g,_out_rotations,edges_by_id,edgei_map,vcount,ecount,k-1)){
-						return true;
-					}
-
-					
-					//Uncross
-					//TODO O(E/V) here
-					//TODO This could be constant time by pop()ing the vertices
-					vcount--;
-					clear_vertex(vertex(vcount,g),g);
-					ecount-=2;
-
-					//revalidate edge descriptors
-					ei = addEdgeWithIndex(g,eis,eit,i,edges_by_id,edgei_map);
-					ej = addEdgeWithIndex(g,ejs,ejt,j,edges_by_id,edgei_map);
+		for(size_t i=0; i < kuratowski_subgraph.size(); i++){
+			auto& e = kuratowski_subgraph[i];
+			auto ei = boost::get(edgei_map,e);
+			for(size_t j=i; j < kuratowski_subgraph.size(); j++){
+				auto& f = kuratowski_subgraph[j];
+				auto fi = boost::get(edgei_map,f);
+				if(disjointEdges(g,e,f)){
+					fake_cross(e,f,ei,fi);
+					auto variant_result = gdraw::planeEmbedding(std::move(g));
+					if(std::holds_alternative<PlanarGraph<Graph>>(variant_result))//xnumber = 0?
+						return std::optional<PlanarGraph<Graph>>(std::move(std::get<0>(variant_result)));
+					else
+						g = std::move(std::get<1>(variant_result));
+					uncross(e,f,ei,fi);
 				}
-				//else std::cout << "Not disjoint" << std::endl;
 			}
 		}
-
+		return std::optional<PlanarGraph<Graph>>();
 	}
-	return false;
+	else{
+		auto result = planarXNumberRecursion(g,k-1,edges_by_index,planar_test,fake_cross,uncross);
+		if(result)
+			return result;
+		auto ecount = num_edges(g.getGraph());
+		for(size_t i =0 ; i< ecount ; i++){
+			auto e = edges_by_index[i];
+			for(size_t j =i; j< ecount ; j++){
+				auto f = edges_by_index[j];
+				if(disjointEdges(g,e,f)){
+					fake_cross(e,f,i,j);
+					auto result = planarXNumberRecursion(g,k-1,edges_by_index,planar_test,fake_cross,uncross);
+					if(result)
+						return result;
+					uncross(e,f,i,j);
+				}
+			}
+		}
+	}
+	return std::optional<PlanarGraph<Graph>>();
+
 }
 
-/*
- * Checks if the Graph g has crossing number at most k. If it does planarized g
- * by adding at most k vertices at the crossings. A combinatorial embedding of
- * the planarization is written in _out_rotations.
- * Invalidates edge_descriptors and iterators.
- */
-template <typename Graph>
-bool leqXnumberk(Graph& g, rotations_t<Graph>& _out_rotations,  int k) noexcept{
 
-	//Build a vector indexing the edges by their id.
-	//Used to avoid iterator/edge description invalidation caused by the removal of edges
-	typename boost::property_map<Graph, boost::edge_index_t>::type edgei_map = get(boost::edge_index, g) ;
-	
-	//size = num_edges + all the possible extra edges (k*2)
-	std::vector<edge_t<Graph>> edges_by_id {num_edges(g)+k*2};
-
-	typename boost::graph_traits<Graph>::edge_iterator ei, ei_end;
-	for(boost::tie(ei,ei_end) = edges(g);ei!=ei_end;ei++){
-		auto i = get(edgei_map,*ei);
-		edges_by_id.at(i) = *ei;
+template <typename Graph, typename Function>
+auto xNumberRecursion(GraphWrapper<Graph>& g,size_t k, Function& embedd_test, std::vector<edge_t<Graph>>& edges_by_index, auto& fake_cross, auto& uncross){
+	//std::cout << "k = "  << k<< std::endl;
+	if(k<1){
+		return embedd_test(g);
 	}
-	//add all the possible extra vertices at once, to avoid repeatedly doing so in the recursion
-	typename boost::graph_traits<Graph>::vertices_size_type vcount = num_vertices(g);
-	typename boost::graph_traits<Graph>::edges_size_type ecount = num_edges(g);
+	else{
+		auto result = xNumberRecursion(g,k-1,embedd_test,edges_by_index,fake_cross,uncross);
+		if(result)
+			return result;
+		auto ecount = num_edges(g.getGraph());
+		for(size_t i =0 ; i< ecount ; i++){
+			auto e = edges_by_index[i];
+			for(size_t j =i; j< ecount ; j++){
+				auto f = edges_by_index[j];
+				if(disjointEdges(g,e,f)){
+					fake_cross(e,f,i,j);
+					auto result = xNumberRecursion(g,k-1,embedd_test,edges_by_index,fake_cross,uncross);
+					if(result)
+						return result;
+					uncross(e,f,i,j);
+				}
+			}
+		}
+	}
+	return decltype(embedd_test(g))();
+}
 
-	for (auto i=0; i<k;i++)
-		add_vertex(g);
+//TODO: would prefer something more strongly typed 
+template <typename Graph, typename Function>
+auto xNumber(GraphWrapper<Graph> g, size_t k, Function embedd_test){
+	auto ecount = num_edges(g.getGraph());
+	auto vcount = num_vertices(g.getGraph());
+	std::vector<edge_t<Graph>> edges_by_index(ecount+2*k);
+	auto edgei_map = get( boost::edge_index, g.getGraph());
 
-	bool answer = leqXnumberkRecursion(g,_out_rotations,edges_by_id,edgei_map,vcount,ecount,k);
-
-	//removes extra added vertices and resizes the rotations if necessary
-	if(answer){
-		removeIsolatedVertices(g);
-		_out_rotations.resize(num_vertices(g));
+	for([[maybe_unused]]auto&& _ : std::views::iota((size_t)0,k)){
+		add_vertex(g.getGraph());
 	}
 
-	return answer;
+	for(auto&& e : range(edges(g.getGraph()))){
+		auto ei = get(edgei_map,e);
+		edges_by_index[ei] = e;
+	}
+
+	auto add_edge_with_index = [&g,&edgei_map,&edges_by_index,&ecount](auto&& u, auto&& v, auto&& ei){
+			auto h = add_edge(u,v,g.getGraph()).first;
+			boost::put(edgei_map,h,ei);
+			edges_by_index[ei] = h;
+			return h;
+	};
+
+	auto fake_cross = [&g,&vcount,&add_edge_with_index,&ecount](auto&& e,auto&& f,auto&& ei, auto&& fi){
+		//std::cout << e << 'x' << f << std::endl;
+		//printGraph(g);
+		auto [u,v] = endpoints(g.getGraph(),e);
+		auto [a,b] = endpoints(g.getGraph(),f);
+
+		//auto e2 = edge(u,v,g.getGraph()).first;
+		//auto f2 = edge(a,b,g.getGraph()).first;
+
+		auto w = vertex(vcount,g.getGraph());
+
+		remove_edge(e,g.getGraph());
+		remove_edge(f,g.getGraph());
+
+		add_edge_with_index(w,u,ei);
+		add_edge_with_index(w,a,fi);
+		add_edge_with_index(w,v,ecount++);
+		add_edge_with_index(w,b,ecount++);
+
+
+		vcount++;
+
+	};
+
+	auto uncross = [&g,&vcount,&ecount,&add_edge_with_index](auto&& e, auto&& f,auto&& ei,auto&& fi){
+		//std::cout << "-" << e << 'x' << f << std::endl;
+		vcount--;
+		clear_vertex(vertex(vcount,g.getGraph()),g.getGraph());
+		ecount-=2;
+
+		auto [u,v] = endpoints(g.getGraph(),e);
+		auto [a,b] = endpoints(g.getGraph(),f);
+
+		//revalidate descriptors...
+		e = add_edge_with_index(u,v,ei);
+		f = add_edge_with_index(a,b,fi);
+	};
+
+	auto result = xNumberRecursion(g,k,embedd_test,edges_by_index,fake_cross,uncross);
+	if(result)
+		removeIsolatedVertices(result.value().getGraph());
+	return result;
 }
 
 } //namespace
-#endif //XNUMBER_HPP

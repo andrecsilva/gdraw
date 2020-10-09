@@ -1,38 +1,42 @@
 CXX=g++
-CXXFLAGS=-O3 -g
+INCLUDE_DIR=include
+
 LDIR=-L/usr/lib/x86_64-linux-gnu/
-STD=-std=c++1z
+LDLIBS=-lboost_graph -lboost_regex 
+LDBOOSTTEST=-lboost_system -lboost_thread -lboost_unit_test_framework
+
+CXXFLAGS=-O3 -std=c++20 -MMD -MP -I$(INCLUDE_DIR) $(LDIR) $(LDLIBS)
 #Logging, if needed
 #DMACRO=-DBOOST_LOG_DYN_LINK
 #LDLIBS=-lboost_graph -lboost_regex -lpthread -lboost_log -lboost_system
-LDLIBS=-lboost_graph -lboost_regex 
-LDBOOSTTEST=-lboost_system -lboost_thread -lboost_unit_test_framework
 RM=rm -f
+#SRC=$(wildcard *.cpp)
+SRC=xnumber.cpp finddpc.cpp findppembedding.cpp
 
-xnumber: xnumber.cpp include/gdraw/xnumber.hpp include/gdraw/util.hpp include/gdraw/io.hpp 
-	$(CXX) $(CXXFLAGS) $(STD) -o $@ xnumber.cpp $(LDIR) $(LDLIBS)
+.PHONY: all
+all: $(SRC:%.cpp=%)
+	
 
-finddpc: finddpc.cpp include/gdraw/pplane.hpp include/gdraw/io.hpp include/gdraw/draw.hpp
-	$(CXX) $(CXXFLAGS) $(STD) -o $@ finddpc.cpp $(LDIR) $(LDLIBS)
+$(SRC:%.cpp=%): % : %.cpp
+	g++ $(CXXFLAGS) -o $@ $<
 
-findppembedding: findppembedding.cpp include/gdraw/pplane.hpp include/gdraw/io.hpp include/gdraw/draw.hpp
-	$(CXX) $(CXXFLAGS) $(STD) -o $@ findppembedding.cpp $(LDIR) $(LDLIBS)
+-include $(SRC:%.cpp=%.d)
 
-unit_test: unit_test.cpp include/gdraw/xnumber.hpp include/gdraw/util.hpp include/gdraw/io.hpp include/gdraw/pplane.hpp 
-	$(CXX) $(STD) -g -o $@ unit_test.cpp $(LDIR) $(LDLIBS) $(LDBOOSTTEST)
+unit_test: unit_test.cpp 
+	$(CXX) $(CXXFLAGS) -g -o $@ unit_test.cpp $(LDBOOSTTEST)
 
-test: include/gdraw/coordinates.hpp include/gdraw/pplane.hpp include/gdraw/xnumber.hpp include/gdraw/util.hpp include/gdraw/draw.hpp include/gdraw/io.hpp test.cpp
-	$(CXX) $(STD) -g -o quick_test test.cpp $(LDIR) $(LDLIBS)
+test: 
+	$(CXX) $(CXXFLAGS) -g -o quick_test test.cpp $(LDIR) $(LDLIBS)
 
 .PHONY: clean
 .PHONY: quick_test
 .PHONY: run_unit_test
 
-quick_test : test
+quick_test: test
 	./quick_test
 
-run_unit_test : unit_test
+run_unit_test: unit_test
 	./unit_test
 
 clean: 
-	$(RM) test unit_test main
+	$(RM) *.o *.d

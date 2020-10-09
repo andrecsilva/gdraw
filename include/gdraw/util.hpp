@@ -1,207 +1,111 @@
-#ifndef UTIL_HPP
-#define UTIL_HPP
+#pragma once
 
 #include <iostream>
 #include <functional>
+#include <utility>
 #include <algorithm>
+#include <ranges>
 
 #include <boost/graph/random_spanning_tree.hpp>
 #include <boost/random/mersenne_twister.hpp>
 
-#include "graph_types.hpp"
+#include <cppitertools/combinations.hpp>
+#include <gdraw/graph_types.hpp>
 
 namespace gdraw{
 
-/***
- * Prints the vertices and edges of a graph.
+
+//TODO maybe use parallel for each? : std::for_each(std::execution::par_unseq,...
+/*
+ * Executes `execute` for each subset of collection with size between `min_size` and `max_size` until it returns `true`.
  */
-template <typename Graph>
-void printGraph(const Graph& g) noexcept{
+template <typename IterableCollection,typename BoolFunctionOverIterable>
+auto enumerate(size_t min_size, size_t max_size, IterableCollection collection,BoolFunctionOverIterable execute) -> bool{
+
+	//auto bound_range = std::ranges::reverse_view(std::ranges::iota_view{min_size,max_size});
 	
-	typename boost::graph_traits<Graph>::vertex_iterator vi;
+	auto bound_range = std::ranges::iota_view{min_size,max_size+1};
 
-	std::cout << "Vertices:" << std::endl;
-
-	//auto edgei_map = get( boost::edge_index, g);
-	//auto vertexi_map = get( boost::vertex_index, g);
-
-	for(vi = vertices(g).first; vi!=vertices(g).second; ++vi){
-		std::cout << *vi << " ";
+	if(min_size==0){
+		using value_t = std::remove_cvref<decltype(*(std::declval<IterableCollection>().begin()))>::type;
+		std::ranges::empty_view<value_t> j;
+		if(execute(j))
+			return true;
 	}
 
-	typename boost::graph_traits<Graph>::edge_iterator ei;
-
-	std::cout << std::endl << "Edges:" << std::endl;
-
-	auto edgei_map = get( boost::edge_index, g);
-
-	for(ei = edges(g).first; ei!=edges(g).second; ++ei){
-		std::cout << "[" << boost::get(edgei_map,*ei) << "]" <<*ei << " "; 
-	}
-
-	std::cout << std::endl;
-}
-
-
-template <typename Graph>
-Graph getV8() noexcept{
-	Graph g(8);
-	add_edge(0, 1, g);
-	add_edge(1, 2, g);
-	add_edge(2, 3, g);
-	add_edge(3, 4, g);
-	add_edge(4, 5, g);
-	add_edge(5, 6, g);
-	add_edge(6, 7, g);
-	add_edge(7, 0, g);
-
-	add_edge(0, 4, g);
-	add_edge(1, 5, g);
-	add_edge(2, 6, g);
-	add_edge(3, 7, g);
-
-	auto edgei_map = get( boost::edge_index, g);
-	typename boost::graph_traits<Graph>::edges_size_type ecount = 0;
-	typename boost::graph_traits<Graph>::edge_iterator ei, ei_end;
-	for(boost::tie(ei,ei_end) = edges(g);ei!=ei_end;ei++)
-		put(edgei_map,*ei,ecount++);
-	return g;
-}
-
-template <typename Graph>
-Graph getKn(int n) noexcept{
-
-	Graph Kn(n);
-
-	for (int i=0; i<n;i++)
-		for(int j=i+1;j<n;j++)
-			add_edge(i,j,Kn);
-
-	auto edgei_map = get( boost::edge_index, Kn);
-	typename boost::graph_traits<Graph>::edges_size_type ecount = 0;
-
-	typename boost::graph_traits<Graph>::edge_iterator ei;
-
-	for(ei = edges(Kn).first; ei!=edges(Kn).second; ++ei)
-		put(edgei_map,*ei,ecount++);
-
-	return Kn;
-}
-
-template <typename Graph> 
-Graph getKpq(int p,int q) noexcept
-{
-
-	Graph Kpq(p+q);
-
-	for (int i=0; i<p+q;i+=2)
-		for(int j=1;j<p+q;j+=2)
-			add_edge(i,j,Kpq);
-
-	auto edgei_map = get( boost::edge_index, Kpq);
-	typename boost::graph_traits<Graph>::edges_size_type ecount = 0;
-
-	typename boost::graph_traits<Graph>::edge_iterator ei;
-
-	for(ei = edges(Kpq).first; ei!=edges(Kpq).second; ++ei)
-		put(edgei_map,*ei,ecount++);
-
-	return Kpq;
-}
-
-bool enumerate(std::vector<bool>& mask,
-		std::function<bool(std::vector<bool>&)> execute,
-		size_t& min_size,
-	       	size_t& max_size,
-		size_t& size,
-		size_t& index,
-		bool& found)
-{
-
-	if(!found){
-		if(index<mask.size()){
-			if(size < max_size){
-				mask[index] = true;
-				size++;
-				index++;
-				enumerate(mask,execute,min_size,max_size,size,index,found);
-				mask[index-1] = false;
-				size--;
-				enumerate(mask,execute,min_size,max_size,size,index,found);
-				index--;
-			}else
-				found = execute(mask);
+	for (auto&& i : bound_range){
+		for (auto&& j : iter::combinations(collection,i)) {
+			if(execute(j))
+				return true;
 		}
-		else
-			if(size>=min_size)
-				found = execute(mask);
-
 	}
-	return found;
+	return false;
 }
 
 /*
- * Executes execute for each subset of cont with size between min_size and max_size.
- * The function execute should take the Container cont and a mask that represents the sub
- * set of cont.
+ * Returns a random spanning tree of g.
+ *
+ * It is just a wrapper around Boost's function.
  */
-template <typename Container>
-bool boundedSubsetsExecute(Container& cont,
-		std::function<bool(Container&,std::vector<bool>&)> execute,
-		size_t min_size,
-		size_t max_size=0){
-	auto bound_execute = std::bind(execute,cont,std::placeholders::_1);
-	std::vector<bool> mask (cont.size(),false);
-	size_t size = 0;
-	size_t index = 0;
-	bool found = false;
-	return enumerate(mask,bound_execute,min_size,max_size,index,size,found);
+template<template<typename> typename Wrapper,typename Graph>
+requires AsGraphWrapper<Wrapper,Graph>
+std::vector<edge_t<Graph>> randomSpanningTree(const Wrapper<Graph>& g){	
+
+	std::vector<vertex_t<Graph>> parent(num_vertices(g.getGraph()),boost::graph_traits<Graph>::null_vertex());
+	std::vector<edge_t<Graph>> tree_edges;
+
+	boost::mt19937 gen(time(0));
+	boost::random_spanning_tree(g.getGraph(),gen,boost::predecessor_map(&parent[0]));
+
+	//auto root = *(vertices(g.getGraph())).first;
+
+	for(auto v : range(vertices(g.getGraph())))
+		if(parent[v] != boost::graph_traits<Graph>::null_vertex())
+			tree_edges.push_back(edge(v,parent[v],g.getGraph()).first);
+
+	return tree_edges;
 }
 
 /*
- * Take a set of edges of g and returns the edges not in the set.
+ * Take a set of edges of `g` and returns the edges not in the set.
+ * 
+ * @param g: A GraphWrapper
  */
-template <typename Graph, typename Container>
-std::vector<edge_t<Graph>> coSubgraphEdges(const Graph& g, Container& subgraph_edges){
+template<template<typename> typename Wrapper,typename Graph,typename Range>
+requires AsGraphWrapper<Wrapper,Graph> && EdgeRange<Range,Graph>
+std::vector<edge_t<Graph>> coSubgraphEdges(const Wrapper<Graph>& g, const Range& subgraph_edges){
 	std::vector<edge_t<Graph>> cs_edges;
 
-	auto edgei_map = get(boost::edge_index,g);
+	auto edgei_map = get(boost::edge_index,g.getGraph());
 
-	std::vector<bool> in_subgraph (num_edges(g),false);
+	std::vector<bool> in_subgraph (num_edges(g.getGraph()),false);
 	auto in_subgraph_map = make_iterator_property_map(in_subgraph.begin(), edgei_map);
 
 	for(auto& e : subgraph_edges){
 		put(in_subgraph_map,e,true);
 	}
 
-	for(auto [ei,ei_end] = edges(g);ei!=ei_end;ei++){
-		edge_t<Graph> e = *ei;
-		if(!get(in_subgraph_map,e))
+	auto not_in_subgraph = [&in_subgraph_map](auto e){
+		return !get(in_subgraph_map,e);
+	};
+
+	for(auto&& e : range(edges(g.getGraph())) | std::views::filter(not_in_subgraph))
 			cs_edges.push_back(e);
-	}
+
 	return cs_edges;
 }
 
 /*
- * Returns a random spanning tree of g.
- * It is just a wrap around Boost's function.
+ * Removes vertices of `g` with no edges.
  */
 template <typename Graph>
-std::vector<edge_t<Graph>> randomSpanningTree(const Graph& g){	
-	std::vector<vertex_t<Graph>> parent(num_vertices(g),boost::graph_traits<Graph>::null_vertex());
-	std::vector<edge_t<Graph>> tree_edges;
-
-	boost::mt19937 gen(time(0));
-	boost::random_spanning_tree(g,gen,boost::predecessor_map(&parent[0]));
-
-	for (auto [vi,vi_end] = vertices(g); vi!=vi_end; vi++){
-		if(parent[*vi] != boost::graph_traits<Graph>::null_vertex()){
-			tree_edges.push_back(edge(*vi,parent[*vi],g).first);
-		}
+inline auto removeIsolatedVertices(Graph& g){
+	//Reverse order, as the indexes are rearranged in the graph to make it contiguous
+	for(int i = num_vertices(g)-1; i>0 ;i--){
+		auto vi = vertex(i,g);
+		if(out_degree(vi,g)==0)
+			remove_vertex(vi,g);
 	}
-
-	return tree_edges;
 }
 
 } //namespace gdraw
-#endif //UTIL_HPP

@@ -1,5 +1,4 @@
-#ifndef PPLANE_HPP
-#define PPLANE_HPP
+#pragma once
 
 #include <iostream>
 #include <vector>
@@ -10,232 +9,245 @@
 #include <boost/graph/undirected_dfs.hpp>
 #include <boost/graph/boyer_myrvold_planar_test.hpp>
 
-#include "graph_types.hpp"
-#include "util.hpp"
+#include <gdraw/graph_types.hpp>
+#include <gdraw/util.hpp>
+#include <gdraw/planar_graphs.hpp>
 
 namespace gdraw{
 
-//Type for embedding scheme
-//Maybe edge_t instead of std::pair?
-//template <typename Graph>
-using embedding_t = typename std::vector<std::vector<std::pair<size_t,int>>>;
+template <typename Graph, typename Range>
+requires EdgeRange<Range,Graph>
+auto doubleCover(GraphWrapper<Graph>&& g,Range&& xedges) -> GraphWrapper<Graph>{
 
-//Reads embeddings from Myrvold and Campbell's program
-embedding_t readEmbedding(){
-	size_t ngraph = 0;
-	size_t nvertices = 0;
+	//printGraph(g);
+	auto n = num_vertices(g.getGraph());
+	auto ecount = num_edges(g.getGraph());
+	auto edgei_map = get( boost::edge_index, g.getGraph());
 
-	std::cin >> ngraph;
-	std::cin >> nvertices;
-
-	embedding_t embedding {nvertices};
-
-	for(size_t i=0; i< nvertices; i++){
-		size_t degree=0;
-		std::cin >> degree;	
-
-		embedding.at(i) = std::vector<std::pair<size_t,int>>{degree};
-		for (size_t j =0; j<degree; j++){
-			size_t vertex=0;
-			int signal=0;
-			std::cin >> vertex >> signal;
-			embedding.at(i).at(j) = std::make_pair(vertex,signal);
-		}
-
+	//TODO ugly solution... would like to devise something a bit better using the indexes
+	//Adding edges invalidate iterators, we need a cache
+	std::vector<edge_t<Graph>> edges_cache;
+	for(auto&& e : range(edges(g.getGraph()))){
+		edges_cache.push_back(e);
 	}
-	return embedding;
+
+	for([[maybe_unused]]auto&& _ : std::views::iota((size_t)0,n)){
+		add_vertex(g.getGraph());
+	}
+
+	auto endpoints = [&g](auto e){
+		return std::make_tuple(source(e,g.getGraph()),target(e,g.getGraph()));
+	};
+
+	//Makes a copy of the original g on the vertices with index n,2n-1
+	for(auto&& [s,t] : edges_cache | std::views::transform(endpoints)){
+		auto f = add_edge(s+n,t+n,g.getGraph()).first;
+		boost::put(edgei_map,f,ecount++);
+	}
+
+	for(auto&& e : xedges){
+		auto [s,t] = endpoints(e);
+
+		auto f = edge(s+n,t+n,g.getGraph()).first;
+
+		remove_edge(e,g.getGraph());
+		remove_edge(s+n,t+n,g.getGraph());
+
+		auto e_index = boost::get(edgei_map,e);
+		auto f_index = boost::get(edgei_map,f);
+
+		auto f1 = add_edge(s,vertex(t+n,g.getGraph()),g.getGraph()).first;
+		auto f2 = add_edge(vertex(s+n,g.getGraph()),t,g.getGraph()).first;
+		boost::put(edgei_map,f1,e_index);
+		boost::put(edgei_map,f2,f_index);
+	}
+
+	return g;
 }
 
-//template <typename Graph, template<typename> typename EdgeContainer,typename Edge>
-//Graph doubleCover(const Graph& g, const EdgeContainer<Edge>& xedges){
-//	std::vector<bool> mask = std::vector<bool>(xedges.size(),true);
-//	doubleCover(g,xedges,mask);
-//}
-/*
- * Returns a double cover of g from a collection of edges.
- * The parameter mask specifies 
- * TODO return the projection?
- * TODO mask -> ranges/views in C++20
- */
-//template <typename Graph, template<typename> typename EdgeContainer,typename Edge>
-template <typename Graph>
-Graph doubleCover(const Graph& g, const std::vector<edge_t<Graph>>& xedges,std::vector<bool> mask){
-	//copy graph with edges;
-	Graph h(g);
 
-	auto n = num_vertices(g);
-	//projections:
-	//auto proj_v = [&n,&g](vertex_t<Graph> v){return vertex(v % n,g); };
-	//auto proj_e = [&n,&g](edge_t<Graph> e){return edge(source(e,g) % n,target(e,g) % n).first; };
+template<template<typename> typename Wrapper,typename Graph>
+requires AsGraphWrapper<Wrapper,Graph>
+auto findDoublePlanarCover(Wrapper<Graph> g) -> std::optional<PlanarGraph<Graph>>{
 
-
-	for(size_t i=0;i<n;i++)
-		add_vertex(h);
-
-	auto h_ecount = num_edges(h);
-	auto edgei_map = boost::get(boost::edge_index,h);
-
-	//Another copy of g, but on the newer vertices
-	for(auto [ei,ei_end] = edges(g); ei!=ei_end;ei++){
-		auto u = target(*ei,g);
-		auto v = source(*ei,g);
-		auto f = add_edge(vertex(u+n,h),vertex(v+n,h),h).first;
-		boost::put(edgei_map,f,h_ecount++);
-	}
-
-	//Removes both copies of e in xedges from h and adds two edges
-	//between both copies
-	
-	for(size_t i=0; i<xedges.size(); i++){
-		auto e = xedges[i];
-		if(mask[i]){
-			auto u = target(e,g);
-			auto v = source(e,g);
-
-			auto f = edge(u+n,v+n,h).first;
-
-			auto e_index = boost::get(edgei_map,e);
-			auto f_index = boost::get(edgei_map,f);
-
-			remove_edge(u,v,h);
-			remove_edge(vertex(u+n,h),vertex(v+n,h),h);
-
-			auto f1 = add_edge(u,vertex(v+n,h),h).first;
-			auto f2 = add_edge(vertex(u+n,h),v,h).first;
-
-			boost::put(edgei_map,f1,e_index);
-			boost::put(edgei_map,f2,f_index);
-		}
-	}
-
-	return h;
-}
-
-template <typename Graph>
-std::vector<edge_t<Graph>> getCrossEdges(const Graph& dpc,const size_t inv){
-	std::vector<edge_t<Graph>> xedges;
-
-	for(auto [ei,ei_end]= edges(dpc); ei!=ei_end;ei++){
-		auto u = source(*ei,dpc);
-		auto v = target(*ei,dpc);
-		if((u < inv && v >=inv) ||
-				(v < inv && u >=inv  ))
-			xedges.push_back(*ei);
-	}
-
-	return xedges;
-}
-
-/*
- * Returns an embedding of G in the Projective Plane from a
- * double planar cover.
- */
-template <typename Graph>
-std::tuple<rotations_t<Graph>,std::vector<int>>
-embeddingFromDPC(const Graph& g, const Graph& dpc){
-	rotations_t<Graph> embedding(num_vertices(g));
-
-	rotations_t<Graph> embedding_dpc(num_vertices(dpc));
-
-	boyer_myrvold_planarity_test(
-			boost::boyer_myrvold_params::graph = dpc
-			,boost::boyer_myrvold_params::embedding = &embedding_dpc[0]
-			);
-	auto n = num_vertices(g);
-
-	std::vector<edge_t<Graph>> xedges = getCrossEdges(dpc,n);
-
-	auto edgei_map = boost::get(boost::edge_index,g);
-	
-	std::vector<int> edge_signals(num_edges(g),1);
-	auto edge_signals_map =  make_iterator_property_map(edge_signals.begin(),edgei_map);
-
-	for(size_t i =0; i<n; i++){
-		for(auto& e : embedding_dpc[i]){
-			auto u = target(e,dpc);
-			auto v = source(e,dpc);
-			int signal = 1;
-			if(u < n && v >=n){
-				v-=n;
-				signal = -1;
-			}
-			if(v < n && u >=n){
-				u-=n;
-				signal = -1;
-			}
-			auto f = edge(u,v,g).first;
-			//std::cout << "[" << boost::get(edgei_map,f) << "]" << f << " " << signal << std::endl;
-			embedding[i].push_back(f);
-			boost::put(edge_signals_map,f,signal);
-		}
-	}
-
-	return {embedding,edge_signals};
-}
-
-/*
- * Finds a double planar cover, if one exists.
- * Exponential on the number of edges of g, but should be quite fast.
- */
-
-template <typename Graph>
-std::tuple<bool,Graph> findDoublePlanarCover(const Graph& g){
-	Graph dpc;
 	auto tree_edges = randomSpanningTree(g);
 
 	auto cotree_edges = coSubgraphEdges(g,tree_edges);
 
-	size_t max_size = cotree_edges.size();
-	//For the double cover to be planar
-	size_t min_size = std::min(cotree_edges.size() - 2*num_vertices(g) + 5,(size_t)0);
-	//std::cout << min_size << ' ' << max_size << ' ' << cotree_edges.size() << std::endl;
+	std::optional<PlanarGraph<Graph>> maybe_planar;
 
-	auto isDPC = [](Graph& g,Graph& h, auto& xedges,std::vector<bool>& mask){
-		h = doubleCover(g,xedges,mask);
-		bool isPlanar =
-			boyer_myrvold_planarity_test(
-					boost::boyer_myrvold_params::graph = h
-					);
-
-		//if(isPlanar)
-		//	printGraph(h);
-
-		return isPlanar;
-
+	auto has_dpc = [&maybe_planar,&g](auto&& edges){
+		auto [h,h_edges] = graph_copy(g,edges);
+		auto dc = doubleCover(std::move(h),std::move(h_edges));
+		auto v = planeEmbedding(std::move(dc));
+		if(std::holds_alternative<PlanarGraph<Graph>>(v)){
+			maybe_planar = std::move(std::get<0>(v));
+			return true;
+		}
+		return false;
+		
 	};
 
-	auto execute = std::bind(isDPC,g,std::ref(dpc),std::placeholders::_1,std::placeholders::_2);
+	size_t max_size = cotree_edges.size();
 
-	bool found = boundedSubsetsExecute<std::vector<edge_t<Graph>>>(cotree_edges,execute,min_size,max_size);
+	size_t min_size = std::min(cotree_edges.size() - 2*num_vertices(g.getGraph()) + 5,(size_t)0);
 
-	//for(auto e : tree_edges)
-	//	std::cout << e << ' ';
-	//std::cout << " Spannning tree" << std::endl;
+	gdraw::enumerate(min_size,max_size,cotree_edges,has_dpc);
 
-	return {found,dpc};
+	return maybe_planar;
 }
 
 /*
- * Finds an embedding of g in the projective plane, if it exists.
- * The embedding will be stored on out_rotations.
- * Exponential on the number of edges of g, but should be quite fast.
+ * parent - a parent vector representing a rooted tree.
+ * root - root of the tree represented by parent.
  */
 template <typename Graph>
-bool findProjectiveEmbedding(const Graph& g, std::tuple<rotations_t<Graph>&,std::vector<int>&> out_embedding){
+auto doublePlanarCover(ProjectivePlanarGraph<Graph> g, std::vector<vertex_t<Graph>> parent, vertex_t<Graph> root) -> PlanarGraph<Graph>{
+	//We fix a spanning tree T and check for edges e such that the unique cycle in T+e is non-contractible
+	//These edges are used to calculate the double cover 
 
-	auto [found,dpc] = findDoublePlanarCover(g);
+	std::vector<int> signal_to_root(num_vertices(g.getGraph()),0);
 
-	if(found)
-		out_embedding = embeddingFromDPC(g,dpc);
+	signal_to_root[root]=1;
 
-	return found;
+	std::vector<vertex_t<Graph>> stack;
+	
+	auto edgei_map = get( boost::edge_index, g.getGraph());
+
+	//Here we calculate the signal of the path from the vertex to the root
+	for(auto&& v : range(vertices(g.getGraph()))){
+		auto w = v;
+		while(signal_to_root[w] == 0 or w != root){
+			stack.push_back(w);
+			w = parent[w];
+		}
+		while(!stack.empty()){
+			auto u = stack.back();
+			stack.pop_back();
+			auto e = edge(u,w,g.getGraph()).first;
+			signal_to_root[u] = signal_to_root[w] * g.edge_signals[get(edgei_map,e)];
+			w = u;
+		}
+	}
+
+	std::vector<edge_t<Graph>> tree_edges;
+
+	for(auto v : range(vertices(g.getGraph())))
+		if(parent[v] != boost::graph_traits<Graph>::null_vertex())
+			tree_edges.push_back(edge(v,parent[v],g.getGraph()).first);
+	
+	auto cotree_edges = coSubgraphEdges(g,tree_edges);
+
+	auto endpoints = [&g](auto&& e){
+		return std::make_tuple(source(e,g.getGraph()),target(e,g.getGraph()));
+	};
+
+	std::vector<edge_t<Graph>> xedges;
+
+	//The paths may have a a common subpath to root, but since it it counted twice it doesn't matter (Z/2Z)
+	for(auto&& e : cotree_edges){
+		auto [u,v] = endpoints(e);
+		auto e_signal = g.edge_signals[get(edgei_map,e)];
+		if(signal_to_root[u] * signal_to_root[v] * e_signal == -1)
+			xedges.push_back(e);
+	}
+
+	//TODO need to make an embedding from the xedges...
+	auto dc = doubleCover(std::move(g),xedges);
+	auto maybe_planar_emb = planeEmbedding(std::move(dc));
+
+	return std::get<PlanarGraph<Graph>>(maybe_planar_emb);
+
 }
 
-//TODO function to find minimal double cover -> min cross edges
 template <typename Graph>
-bool findMinDoubleCover(const Graph& g);
+auto doublePlanarCover(ProjectivePlanarGraph<Graph> g) -> PlanarGraph<Graph>{
+
+	std::vector<vertex_t<Graph>> parent(num_vertices(g.getGraph()),boost::graph_traits<Graph>::null_vertex());
+
+	boost::mt19937 gen(time(0));
+	boost::random_spanning_tree(g.getGraph(),gen,boost::predecessor_map(&parent[0]));
+
+	auto root = *(vertices(g.getGraph()).first);
+
+	return doublePlanarCover(std::move(g),parent,root);
 
 }
 
-#endif //PPLANE_HPP
+template <typename Graph>
+auto embeddingFromDPC(PlanarGraph<Graph> g) -> ProjectivePlanarGraph<Graph>{
+	
+	//Due to the complexity of the operations clearVertex and remove_vertex, creating a new graph is simply faster
+	auto n = num_vertices(g.getGraph());
+	Graph h = Graph(n/2);
 
+	auto endpoints = [&g](auto&& e){
+		return std::make_tuple(source(e,g.getGraph()),target(e,g.getGraph()));
+	};
+
+	auto is_x_edge = [&n,&endpoints](auto&& e){
+		auto [u,v] = endpoints(e);
+		if((u < n/2 && v>=n/2) ||
+			(u >=n/2 && v < n/2))
+			return true;
+		return false;
+	};
+
+	auto project = [&n](auto&& v){
+		return v % (n/2);
+	};
+
+
+	//We need to maintain the multiplicity of edges
+	//We first count the number of edges that project to to a single edge
+	//Each edge will have twice their multiplicity as projections
+	std::map<std::tuple<vertex_t<Graph>,vertex_t<Graph>>,size_t> count_projections;
+	for(auto&& e : range(edges(g.getGraph()))){
+		auto [u,v] = endpoints(e);
+		u = project(u);
+		v = project(v);
+		++count_projections[std::make_tuple(u,v)];
+	}
+
+	auto edgei_map = boost::get(boost::edge_index,h);
+	size_t h_ecount =0;
+
+	//We now add exactly half the multiplicity of the projected edges
+	for(auto&& [p,e_count] : count_projections){
+		//std::cout << e << ' ' << e_count << std::endl;
+		//auto [u,v] = endpoints(e);
+		auto [u,v] = p;
+		//std::cout << u << ' ' << v << ' ' << e_count << std::endl;
+		for([[maybe_unused]]auto&& _ : std::views::iota((size_t)0,e_count/2)){
+			auto f = add_edge(u,v,h).first;
+			boost::put(edgei_map,f,h_ecount++);
+		}
+	}
+
+	rotations_t<Graph> h_rotations(n/2);
+	std::vector<int> edge_signals(num_edges(h),1);
+
+	for(size_t u =0;u<n/2;u++)
+		for(auto&& e : g.rotations[u]){
+			auto [v,w] = endpoints(e);
+			edge_t<Graph> f;
+			if(is_x_edge(e)){
+				v = project(v);
+				w = project(w);
+				f = edge(v,w,h).first;
+				auto f_index = boost::get(edgei_map,f);
+				h_rotations[u].push_back(f);
+				edge_signals[f_index] = -1;
+			}else{
+				auto f = edge(v,w,h).first;
+				auto f_index = boost::get(edgei_map,f);
+				h_rotations[u].push_back(f);
+				edge_signals[f_index] = 1;
+			}
+		}
+
+	return ProjectivePlanarGraph<Graph>{std::move(h),std::move(h_rotations),std::move(edge_signals)};
+}
+
+
+}//namespace gdraw

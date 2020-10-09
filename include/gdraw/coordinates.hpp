@@ -1,5 +1,6 @@
-#ifndef COORDINATES
-#define COORDINATES
+#pragma once
+
+namespace gdraw{
 
 struct coord_t{
 	double x;
@@ -38,4 +39,4 @@ std::ostream& operator<<(std::ostream& out, const cubicSpline& spline){
 	return out;
 }
 
-#endif
+}//namespace
