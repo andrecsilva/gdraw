@@ -6,39 +6,43 @@ from tikz import Figure
 from tikz import Node
 from tikz import Path
 
+
 def posToList(s):
-    f = lambda s: tuple([float(k) for k in s.split(',')])
-    return [f(i) for i in s[1:-1].split(' ')]
+    def f(s): tuple([float(k) for k in s.split(",")])
+    return [f(i) for i in s[1:-1].split(" ")]
+
 
 def tikzFromPos(g):
     f = Figure()
     tikzNodes = dict()
     for n in g.get_nodes():
-        tn = Node(posToList(n.get_attributes()['pos'])[0], n.get_name())
+        tn = Node(posToList(n.get_attributes()["pos"])[0], n.get_name())
         tikzNodes[n.get_name()] = tn
         f.addNode(tn)
 
-    #Graphviz pos attribute requires 3n+1 points, drawing a cubic splines for each triple of points
+    # Graphviz pos attribute requires 3n+1 points, drawing a cubic splines for each triple of points
     for e in g.get_edges():
-        color = ''
-        if 'color' in e.get_attributes():
-            color = e.get_attributes()['color']
+        color = ""
+        if "color" in e.get_attributes():
+            color = e.get_attributes()["color"]
 
-        p = Path(tikzNodes[e.get_source()],style=f'draw,{color}')
+        p = Path(tikzNodes[e.get_source()], style=f"draw,{color}")
 
-        if 'pos' in e.get_attributes():
-            controls = posToList(e.get_attributes()['pos'])
+        if "pos" in e.get_attributes():
+            controls = posToList(e.get_attributes()["pos"])
             p.to(controls[0])
             for i in range(1, len(controls), 3):
-                p.curveTo(controls[i+2], controls[i], controls[i+1])
+                p.curveTo(controls[i + 2], controls[i], controls[i + 1])
         p.to(tikzNodes[e.get_destination()])
         f.addPath(p)
     return f
+
 
 def main():
     with sys.stdin as dot:
         g = pydot.graph_from_dot_data(dot.read())
     print(tikzFromPos(g[0]).compile())
+
 
 if __name__ == "__main__":
     main()
