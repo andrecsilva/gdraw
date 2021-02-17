@@ -15,6 +15,23 @@
 
 namespace gdraw{
 
+/*
+ * Checks wheter the cycle is 1-sided (if the number of negative signal edges is odd)
+ */
+template <typename Graph,int Genus,EdgeRange<Graph> T>
+auto is1Sided(const NonOrientableEmbeddedGraph<Graph,Genus>& g, const T& cycle){
+	auto edgei_map = get( boost::edge_index, g.getGraph());
+	int signal=1;
+
+	for(auto&& e : cycle){
+		//std::cout << e <<std::endl;
+		signal *= g.signal(e);
+	}
+
+	return signal == -1? true: false;
+}
+
+
 template <typename Graph, typename Range>
 requires EdgeRange<Range,Graph>
 auto doubleCover(GraphWrapper<Graph>&& g,Range&& xedges) -> GraphWrapper<Graph>{
@@ -96,6 +113,7 @@ auto findDoublePlanarCover(Wrapper<Graph> g) -> std::optional<PlanarGraph<Graph>
 
 	return maybe_planar;
 }
+
 
 /*
  * parent - a parent vector representing a rooted tree.
