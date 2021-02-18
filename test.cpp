@@ -36,7 +36,8 @@ boost::vecS
 >; 
 
 // TODO:
-// cut along operation
+// cut along operation for 1-sided cycles
+// cut along for 2-sided cycles
 // facial drawing for pplanar graphs
 // test for separable cycle
 // test for contractible cycle
@@ -114,6 +115,85 @@ struct vertex_output_visitor : public output_visitor
 //	return std::make_tuple(std::move(h),std::move(h_edges));
 //}
 
+/*
+ * Cuts along a cycle in an embedded graph. The result is a new graph
+ * where for each vertex v of the cycle is split into two vertices.
+ * Their neighbors are determined by which "side" of the cycle they are.
+ */
+template <typename Graph,EdgeRange<Graph> T>
+auto cutAlongCycle(EmbeddedGraph<Graph> g, const T& two_sided_cycle){
+	
+	std::vector<edge_t<Graph>> to_remove;
+	auto find_common = [&g](auto e,auto f){
+		auto [v,w] = gdraw::endpoints(g.getGraph(),e);
+		auto [x,y] = gdraw::endpoints(g.getGraph(),f);
+		if(v==x || v==y)
+			return v;
+		if(w==x || w==y)
+			return w;
+		return boost::graph_traits<Graph>::null_vertex();
+	};
+	auto get_next_edge = [&two_sided_cycle](auto ei){
+		if(ei+1 == two_sided_cycle.end())
+			return *(two_sided_cycle.begin());
+		return *(ei+1);
+	};
+	auto is_left = [](auto i,auto ei,auto fi){
+		if(ei< fi){
+			return i<ei || i>fi;
+		}
+			return fi<i && i<ei;
+	};
+	
+	auto edgei_map = get(boost::edge_index,g.getGraph());
+	auto ecount = num_edges(g.getGraph());
+
+	//TODO make new rotations
+	for(auto&& ei = two_sided_cycle.begin();ei!=two_sided_cycle.end();ei++){
+		auto e = *ei;
+		auto f = get_next_edge(ei);
+		auto u = find_common(e,f);
+		
+		std::cout << e << ' ' << f << ' ' << u << std::endl;
+		size_t e_index =0;
+		size_t f_index =0;
+		for(size_t i =0;i<g.rotations[u].size();++i){
+			auto h = g.rotations[u][i];
+			if(h==e)
+				e_index=i;
+			if(h==f)
+				f_index=i;
+		}
+
+		std::cout << e_index << ' ' << f_index << ' ' << std::endl;
+		auto ul = add_vertex(g.getGraph());
+
+		for(size_t i =0;i<g.rotations[u].size();++i){
+			auto h = g.rotations[u][i];
+			auto [v,w] = endpoints(g.getGraph(),h);
+			auto not_u = u!=v? v : w;
+
+			std::cout << h << ' ' << not_u << ' ' << std::endl;
+
+			if(is_left(i,e_index,f_index)){
+				auto k =  add_edge(ul,not_u,g.getGraph()).first;
+				boost::put(edgei_map,k,boost::get(edgei_map,h));
+				to_remove.push_back(h);
+			}
+			if(h==e || h==f){
+				auto k =  add_edge(ul,not_u,g.getGraph()).first;
+				boost::put(edgei_map,k,ecount++);
+			}
+		}
+	}
+
+	printGraph(g);
+
+	for(auto&& e : to_remove)
+		remove_edge(e,g.getGraph());
+
+	printGraph(g);
+}
 
 int main(){
 	GraphWrapper<AdjList> g {gdraw::getKpq<AdjList>(3,3)};
@@ -140,6 +220,9 @@ int main(){
 
 	std::vector<edge_t<AdjList>> cycle1 = {edge(0,3,pg.getGraph()).first,edge(3,1,pg.getGraph()).first,edge(1,4,pg.getGraph()).first,edge(4,0,pg.getGraph()).first};
 	std::vector<edge_t<AdjList>> cycle2 = {edge(0,3,pg.getGraph()).first,edge(3,2,pg.getGraph()).first,edge(2,4,pg.getGraph()).first,edge(4,0,pg.getGraph()).first};
-	std::cout << std::boolalpha << gdraw::is1Sided(pg,cycle1) << std::endl;
-	std::cout << std::boolalpha << gdraw::is1Sided(pg,cycle2) << std::endl;
+	//std::cout << std::boolalpha << gdraw::is1Sided(pg,cycle1) << std::endl;
+	//std::cout << std::boolalpha << gdraw::is1Sided(pg,cycle2) << std::endl;
+
+	cutAlongCycle(std::move(pg),cycle1);
+
 }
