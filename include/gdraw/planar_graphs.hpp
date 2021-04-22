@@ -120,7 +120,7 @@ auto planeEmbedding(GraphWrapper<Graph> g) -> std::variant<PlanarGraph<Graph>,No
 			);
 
 	if(embedded){
-		return OrientableEmbeddedGraph<Graph,0>(std::move(g),std::move(rotations));
+		return OrientableEmbeddedGraph<Graph,0>(std::move(g),std::move(rotations),std::vector<int>(num_edges(g.getGraph()),1));
 	}
 	return NonEmbeddableGraph<Graph>(std::move(g),std::move(kuratowski_edges));
 }

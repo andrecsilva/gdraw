@@ -25,7 +25,7 @@ $(SRC:%.cpp=%): % : %.cpp
 unit_test: unit_test.cpp 
 	$(CXX) $(CXXFLAGS) -g -o $@ unit_test.cpp $(LDBOOSTTEST)
 
-test: 
+test: test.cpp
 	$(CXX) $(CXXFLAGS) -pg -o quick_test test.cpp $(LDIR) $(LDLIBS)
 
 .PHONY: clean
