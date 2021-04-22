@@ -159,28 +159,28 @@ concept AsGraphWrapper = std::convertible_to<T<Graph>,GraphWrapper<Graph>>;
 
 
 
-/** An abstract class used for the implementation of `OrientableEmbeddedGraph` and `NonOrientableEmbeddedGraph`
- *
+/**
+ * An abstract class dealing with the internals of rotations.
  * You probaly do not want to use this.
  */
 template <typename Graph>
-class EmbeddedGraph : public GraphWrapper<Graph>{
+class PureEmbeddedGraph : public GraphWrapper<Graph>{
 	public:
 		rotations_t<Graph> rotations;
 
-		EmbeddedGraph(GraphWrapper<Graph> g, rotations_t<Graph> rotations)
+		PureEmbeddedGraph(GraphWrapper<Graph> g, rotations_t<Graph> rotations)
 		: GraphWrapper<Graph>(std::move(g)),
 		rotations(std::move(rotations)){}
 
-		EmbeddedGraph(EmbeddedGraph&& other) : GraphWrapper<Graph>(std::move(other)){
+		PureEmbeddedGraph(PureEmbeddedGraph&& other) : GraphWrapper<Graph>(std::move(other)){
 			if constexpr(debug)
-				std::cout << "EmbeddedGraph Move build" << std::endl;
+				std::cout << "PureEmbeddedGraph Move build" << std::endl;
 			(*this).rotations = std::move(other.rotations);
 		}
 
-		EmbeddedGraph(const EmbeddedGraph& other) : GraphWrapper<Graph>(other){
+		PureEmbeddedGraph(const PureEmbeddedGraph& other) : GraphWrapper<Graph>(other){
 			if constexpr(debug)
-				std::cout << "EmbeddedGraph Copy build" << std::endl;
+				std::cout << "PureEmbeddedGraph Copy build" << std::endl;
 			(*this).rotations = rotations_t<Graph>(num_vertices(other.getGraph()));
 					
 			auto this_edgei_map = get(boost::edge_index, (*this).getGraph());
@@ -217,71 +217,74 @@ class EmbeddedGraph : public GraphWrapper<Graph>{
 			}
 		}
 		
-		EmbeddedGraph& operator=(EmbeddedGraph&& other){
+		PureEmbeddedGraph& operator=(PureEmbeddedGraph&& other){
 			if constexpr(debug)
-				std::cout << "EmbeddedGraph Move =" << std::endl;
+				std::cout << "PureEmbeddedGraph Move =" << std::endl;
 			GraphWrapper<Graph>::operator=(std::move(other));
 			(*this).rotations = std::move(other.rotations);
 			return *this;
 		}
 
-		EmbeddedGraph& operator=(const EmbeddedGraph& other){ 
+		PureEmbeddedGraph& operator=(const PureEmbeddedGraph& other){ 
 			if constexpr(debug)
 				std::cout << "Copy =" << std::endl;
-			(*this) = EmbeddedGraph(other);
+			(*this) = PureEmbeddedGraph(other);
 			return *this;
 		}
 };
 
-
-/**
- * A Graph that is embedded in a orientable surface of genus `Genus`.
+/*
+ * A graph with an associated embedding scheme. 
  */
-template <typename Graph,int Genus>
-class OrientableEmbeddedGraph : public EmbeddedGraph<Graph>{
-
-	public:
-		//rotations_t<Graph> rotations;
-		//int genus = Genus;
-		
-		//OrientableEmbeddedGraph<Graph,Genus>(const OrientableEmbeddedGraph<Graph,Genus>& other) = default;
-
-		//OrientableEmbeddedGraph<Graph,Genus>(OrientableEmbeddedGraph<Graph,Genus>&& other) = default;
-
-		OrientableEmbeddedGraph(GraphWrapper<Graph> g, rotations_t<Graph> rotations):
-			EmbeddedGraph<Graph>{std::move(g),std::move(rotations)}{}
-			//,euler_characteristic(std::move(euler_characteristic)) {}
-
-		inline auto signal(edge_t<Graph>) const -> int{
-			return 1;
-		}
-
-		inline auto genus() -> int{
-			return Genus;
-		}
-};
-
-template <typename Graph,int Genus>
-class NonOrientableEmbeddedGraph : public EmbeddedGraph<Graph>{
+template <typename Graph>
+class EmbeddedGraph : public PureEmbeddedGraph<Graph>{
 
 	public:
 		std::vector<int> edge_signals;
-		
-		//TODO int range instead of vector?
-		NonOrientableEmbeddedGraph(GraphWrapper<Graph> g, rotations_t<Graph> rotations, std::vector<int> edge_signals):
-			EmbeddedGraph<Graph>{std::move(g),std::move(rotations)},
+
+		EmbeddedGraph(GraphWrapper<Graph> g, rotations_t<Graph> rotations, std::vector<int> edge_signals):
+			PureEmbeddedGraph<Graph>{std::move(g),std::move(rotations)},
 			edge_signals(std::move(edge_signals)){}
 
 		//OrientableEmbeddedGraph(OrientableEmbeddedGraph& other) = default;
 		//OrientableEmbeddedGraph(OrientableEmbeddedGraph&& other) = default;
 
 		inline auto signal(edge_t<Graph> e) const -> int{
-			auto edgei_map = get( boost::edge_index, this->getGraph());
+			auto edgei_map = get(boost::edge_index, this->getGraph());
 			return edge_signals[get(edgei_map,e)];
 		}
+};
+
+/*
+ * A Graph that is embedded in an orientable surface with EulerGenus `EulerGenus`.
+ * It assumes that the all the edges have positive signals.
+ */
+template <typename Graph, int EulerGenus>
+class OrientableEmbeddedGraph : public EmbeddedGraph<Graph>{
+
+	public:
+
+		OrientableEmbeddedGraph(GraphWrapper<Graph> g, rotations_t<Graph> rotations,std::vector<int> edge_signals):
+			EmbeddedGraph<Graph>{std::move(g),std::move(rotations),std::move(edge_signals)}{}
+			//,euler_characteristic(std::move(euler_characteristic)) {}
+
+		inline auto signal(edge_t<Graph>) const -> int{
+			return 1;
+		}
+};
+
+/*
+ * A Graph that is embedded in a non-orientable surface with EulerGenus `EulerGenus`.
+ */
+template <typename Graph, int EulerGenus>
+class NonOrientableEmbeddedGraph : public EmbeddedGraph<Graph>{
+
+	public:
+		NonOrientableEmbeddedGraph(GraphWrapper<Graph> g, rotations_t<Graph> rotations,std::vector<int> edge_signals):
+			EmbeddedGraph<Graph>{std::move(g),std::move(rotations),std::move(edge_signals)}{}
 
 		inline auto genus() -> int{
-			return Genus;
+			return EulerGenus;
 		}
 
 };
