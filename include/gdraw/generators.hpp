@@ -1,5 +1,5 @@
 /**
- * Functions for generating common grpah families.
+ * Functions for generating common graph families.
  */
 #pragma once
 

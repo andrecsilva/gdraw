@@ -26,7 +26,7 @@ unit_test: unit_test.cpp
 	$(CXX) $(CXXFLAGS) -g -o $@ unit_test.cpp $(LDBOOSTTEST)
 
 test: 
-	$(CXX) $(CXXFLAGS) -g -o quick_test test.cpp $(LDIR) $(LDLIBS)
+	$(CXX) $(CXXFLAGS) -pg -o quick_test test.cpp $(LDIR) $(LDLIBS)
 
 .PHONY: clean
 .PHONY: quick_test
