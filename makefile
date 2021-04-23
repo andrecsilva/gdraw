@@ -12,21 +12,29 @@ CXXFLAGS=-O3 -std=c++20 -MMD -MP -I$(INCLUDE_DIR) $(LDIR) $(LDLIBS)
 RM=rm -f
 #SRC=$(wildcard *.cpp)
 SRC=xnumber.cpp finddpc.cpp findppembedding.cpp
+TEST=$(shell find test -iname 'test_*.cpp')
 
 .PHONY: all
 all: $(SRC:%.cpp=%)
 	
 
 $(SRC:%.cpp=%): % : %.cpp
-	g++ $(CXXFLAGS) -o $@ $<
+	$(CXX) $(CXXFLAGS) -o $@ $<
 
 -include $(SRC:%.cpp=%.d)
 
-unit_test: unit_test.cpp 
-	$(CXX) $(CXXFLAGS) -g -o $@ unit_test.cpp $(LDBOOSTTEST)
+$(TEST:%.cpp=%): % : %.cpp
+	$(CXX) $(CXXFLAGS) -o $@.test $<
+
+-include $(TEST:%.cpp=%.d)
 
 test: test.cpp
 	$(CXX) $(CXXFLAGS) -pg -o quick_test test.cpp $(LDIR) $(LDLIBS)
+
+#$(info "$(TEST)")
+
+test_all: $(TEST:%.cpp=%)
+	for t in test/test_*.test; do ./$$t; done
 
 .PHONY: clean
 .PHONY: quick_test
