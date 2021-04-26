@@ -267,6 +267,9 @@ class OrientableEmbeddedGraph : public EmbeddedGraph<Graph>{
 		OrientableEmbeddedGraph(GraphWrapper<Graph> g, rotations_t<Graph> rotations,std::vector<int> edge_signals):
 			EmbeddedGraph<Graph>{std::move(g),std::move(rotations),std::move(edge_signals)}{}
 			//,euler_characteristic(std::move(euler_characteristic)) {}
+			
+		OrientableEmbeddedGraph(GraphWrapper<Graph> g, rotations_t<Graph> rotations):
+			EmbeddedGraph<Graph>{std::move(g),std::move(rotations),std::vector<int>(num_edges(g.getGraph()))} {}
 
 		inline auto signal(edge_t<Graph>) const -> int{
 			return 1;
@@ -455,7 +458,7 @@ template <typename Graph>
 using NonPlanarGraph = NonEmbeddableGraph<Graph>;
 
 template <typename Graph>
-using ProjectivePlanarGraph = NonOrientableEmbeddedGraph<Graph,1>;
+using ProjectivePlanarGraph = NonOrientableEmbeddedGraph<Graph,2>;
 
 /**
  * Returns a copy of g and g_edges such that the copy of g_edges are valid descriptors in the copied graph.
@@ -509,9 +512,10 @@ void printGraph(const GraphWrapper<Graph>& g){
 
 /** Prints the embedding scheme of an embedded graph.
  */
-template<template<typename,int> typename T,typename Graph, int Genus>
-requires Embeddable<T,Graph,Genus>
-auto printEmbedding(const T<Graph,Genus>& g){
+//template<template<typename,int> typename T,typename Graph, int Genus>
+//requires Embeddable<T,Graph,Genus>
+template <typename Graph>
+auto printEmbedding(const EmbeddedGraph<Graph>& g){
 	for(auto&& pi_u : g.rotations){
 		for(auto&& e : pi_u){
 			std::cout << (g.signal(e)==1?'+':'-') << e << ' ';

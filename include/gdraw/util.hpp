@@ -42,6 +42,50 @@ auto enumerate(size_t min_size, size_t max_size, IterableCollection collection,B
 	return false;
 }
 
+/**
+ * Recursive implementation of depth-first search in a graph.
+ */
+template <typename Graph>
+void dfsTreeVisit(const Graph& g, const vertex_t<Graph>& u, std::vector<vertex_t<Graph>>& parent){
+
+	//std::cout << u << std::endl;
+	for(auto&& v : range(adjacent_vertices(u,g))){
+		if(parent[v] == boost::graph_traits<Graph>::null_vertex()){
+			parent[v]=u;
+			dfsTreeVisit(g,v,parent);
+		}
+	}
+}
+
+/**
+ * Returns a depth-first search forest of a graph represented by a vector containing
+ * the parent for each vertex.
+ */
+template <typename Graph>
+auto dfsForest(const GraphWrapper<Graph>& g, vertex_t<Graph>& root){
+
+	std::vector<vertex_t<Graph>> parent(num_vertices(g.getGraph()),boost::graph_traits<Graph>::null_vertex());
+	parent[root] = root;
+
+	dfsTreeVisit(g.getGraph(),root,parent);
+
+	for(auto&& u : range(vertices(g.getGraph()))){
+		if(parent[u] == boost::graph_traits<Graph>::null_vertex()){
+			parent[u] = u;
+			dfsTreeVisit(g.getGraph(),u,parent);
+			parent[u] = boost::graph_traits<Graph>::null_vertex();
+		}
+	}
+
+	parent[root] = boost::graph_traits<Graph>::null_vertex();
+
+	//for(auto&& p : parent)
+	//	std::cout << p << ' ';
+	//std::cout << std::endl;
+
+	return parent;
+}
+
 /*
  * Returns a random spanning tree of g.
  *
