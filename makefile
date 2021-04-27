@@ -5,7 +5,7 @@ LDIR=-L/usr/lib/x86_64-linux-gnu/
 LDLIBS=-lboost_graph -lboost_regex 
 LDBOOSTTEST=-lboost_system -lboost_thread -lboost_unit_test_framework
 
-CXXFLAGS=-O3 -std=c++20 -MMD -MP -I$(INCLUDE_DIR) $(LDIR) $(LDLIBS)
+CXXFLAGS=-std=c++20 -MMD -MP -I$(INCLUDE_DIR) $(LDIR) $(LDLIBS)
 #Logging, if needed
 #DMACRO=-DBOOST_LOG_DYN_LINK
 #LDLIBS=-lboost_graph -lboost_regex -lpthread -lboost_log -lboost_system
@@ -19,17 +19,17 @@ all: $(SRC:%.cpp=%)
 	
 
 $(SRC:%.cpp=%): % : %.cpp
-	$(CXX) $(CXXFLAGS) -o $@ $<
+	$(CXX) $(CXXFLAGS) -O3 -o $@ $<
 
 -include $(SRC:%.cpp=%.d)
 
 $(TEST:%.cpp=%): % : %.cpp
-	$(CXX) $(CXXFLAGS) -o $@.test $<
+	$(CXX) $(CXXFLAGS) -p -g -o $@.test $<
 
 -include $(TEST:%.cpp=%.d)
 
 test: test.cpp
-	$(CXX) $(CXXFLAGS) -pg -o quick_test test.cpp $(LDIR) $(LDLIBS)
+	$(CXX) $(CXXFLAGS) -p -g -o quick_test test.cpp $(LDIR) $(LDLIBS)
 
 #$(info "$(TEST)")
 
