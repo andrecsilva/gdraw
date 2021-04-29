@@ -54,6 +54,48 @@ Graph getKn(int n) noexcept{
 }
 
 /**
+ * Generates a cycle of size n.
+ */
+template <typename Graph>
+Graph genCycle(int n) noexcept{
+
+	Graph cycle(n);
+
+	for (int i=0; i<n;i++)
+		add_edge(i,(i+1) % n,cycle);
+
+	auto edgei_map = get( boost::edge_index, cycle);
+	typename boost::graph_traits<Graph>::edges_size_type ecount = 0;
+
+	typename boost::graph_traits<Graph>::edge_iterator ei;
+
+	for(auto [ei,ei_end] = edges(cycle);ei!=ei_end;ei++)
+		put(edgei_map,*ei,ecount++);
+
+	return cycle;
+}
+
+template <typename Graph>
+Graph genV2n(int n) noexcept{
+
+	Graph V = genCycle<Graph>(2*n);
+
+	for (int i=0; i<=n;i++)
+		add_edge(i,i+n,V);
+
+	auto edgei_map = get( boost::edge_index, V);
+	typename boost::graph_traits<Graph>::edges_size_type ecount = 0;
+
+	typename boost::graph_traits<Graph>::edge_iterator ei;
+
+	for(auto [ei,ei_end] = edges(V);ei!=ei_end;ei++)
+		put(edgei_map,*ei,ecount++);
+
+	return V;
+}
+
+
+/**
  * Generates a complete bipartite graph with parts of size p and q.
  */
 template <typename Graph> 
