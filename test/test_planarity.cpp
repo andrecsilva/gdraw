@@ -43,6 +43,20 @@ auto test_isPlanar(){
 
 }
 
+auto test_maximal(){
+	size_t n = 3;
+	auto g = GraphWrapper{genPath<AdjList>(n)};
+
+	auto pg = std::get<PlanarGraph<AdjList>>(planeEmbedding(g));
+
+	pg = makeMaximal(std::move(pg));
+
+	printGraph(pg);
+
+	ASSERT(num_edges(pg.getGraph()) == 3*n - 6);
+}
+
+
 auto test_planarXNumber()
 {
 	auto g = GraphWrapper<AdjList>{gdraw::getKpq<AdjList>(3,4)};
@@ -71,8 +85,8 @@ auto test_doubleCover()
 	auto nc = num_vertices(dc.getGraph());
 	auto mc = num_edges(dc.getGraph());
 
-	ASSERT(nc = 2*n);
-	ASSERT(mc = 2*m);
+	ASSERT(nc == 2*n);
+	ASSERT(mc == 2*m);
 }
 
 auto test_doublePlanarCover()
@@ -88,8 +102,10 @@ auto test_doublePlanarCover()
 int main(){
 	std::cout << "Testing : " << __FILE__ << std::endl;
 
-	test_doublePlanarCover();
 	test_isPlanar();
+	test_maximal();
+
 	test_planarXNumber();
 	test_doubleCover();
+	test_doublePlanarCover();
 }

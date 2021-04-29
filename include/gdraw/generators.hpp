@@ -75,6 +75,28 @@ Graph genCycle(int n) noexcept{
 	return cycle;
 }
 
+/**
+ * Generates a path with n edges.
+ */
+template <typename Graph>
+Graph genPath(int n) noexcept{
+
+	Graph path(n+1);
+
+	for (int i=0; i<n;i++)
+		add_edge(i,i+1,path);
+
+	auto edgei_map = get( boost::edge_index, path);
+	typename boost::graph_traits<Graph>::edges_size_type ecount = 0;
+
+	typename boost::graph_traits<Graph>::edge_iterator ei;
+
+	for(auto [ei,ei_end] = edges(path);ei!=ei_end;ei++)
+		put(edgei_map,*ei,ecount++);
+
+	return path;
+}
+
 template <typename Graph>
 Graph genV2n(int n) noexcept{
 
