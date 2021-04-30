@@ -162,8 +162,6 @@ auto chrobakPayneDraw(PlanarGraph<Graph>& g) -> DrawnGraph<Graph>{
 	//copy graph here, we don't want the extra edges...
 	auto g_maximal = makeMaximal(g);
 
-	makeMaximal(g_maximal);
-
 	std::vector<vertex_t<Graph> > ordering;
 	auto rotations_pmap = make_iterator_property_map(g_maximal.rotations.begin(),get(boost::vertex_index,g_maximal.getGraph()));
 	planar_canonical_ordering(g_maximal.getGraph(), rotations_pmap, std::back_inserter(ordering));
@@ -173,7 +171,7 @@ auto chrobakPayneDraw(PlanarGraph<Graph>& g) -> DrawnGraph<Graph>{
 	auto coordinates_pmap = make_iterator_property_map(coordinates.begin(),get(boost::vertex_index,g_maximal.getGraph()));
 
 	chrobak_payne_straight_line_drawing(g_maximal.getGraph(),
-			  g.rotations,
+			  g_maximal.rotations,
 			  ordering.begin(),
 			  ordering.end(),
 			  coordinates_pmap);
