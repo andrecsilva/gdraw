@@ -20,9 +20,8 @@ boost::vecS
 
 using namespace gdraw;
 
-auto test_1_sided_cycle(){
+auto test_cut_1_sided_cycle(){
 	GraphWrapper<AdjList> g {gdraw::getKpq<AdjList>(3,3)};
-	GraphWrapper<AdjList> h {gdraw::getKn<AdjList>(6)};
 	
 	rotations_t<AdjList> rotations = {
 		{edge(0,3,g.getGraph()).first,edge(0,4,g.getGraph()).first,edge(0,5,g.getGraph()).first},
@@ -39,17 +38,19 @@ auto test_1_sided_cycle(){
 	esignals[boost::get(edgei_map,edge(1,4,g.getGraph()).first)] = -1;
 	esignals[boost::get(edgei_map,edge(2,5,g.getGraph()).first)] = -1;
 
-	auto pg = ProjectivePlanarGraph<AdjList>(std::move(g),std::move(rotations),std::move(esignals));
-	printGraph(pg);
-	gdraw::printEmbedding(pg);
+	auto eg = EmbeddedGraph<AdjList>(std::move(g),std::move(rotations),std::move(esignals));
 
-	std::vector<edge_t<AdjList>> cycle1 = {edge(0,3,pg.getGraph()).first,edge(3,1,pg.getGraph()).first,edge(1,4,pg.getGraph()).first,edge(4,0,pg.getGraph()).first};
-	std::vector<edge_t<AdjList>> cycle2 = {edge(5,2,pg.getGraph()).first,edge(2,4,pg.getGraph()).first,edge(4,0,pg.getGraph()).first,edge(0,3,pg.getGraph()).first,edge(3,1,pg.getGraph()).first,edge(1,5,pg.getGraph()).first};
-	//std::cout << std::boolalpha << gdraw::is1Sided(pg,cycle1) << std::endl;
-	//std::cout << std::boolalpha << gdraw::is1Sided(pg,cycle2) << std::endl;
+	std::vector<edge_t<AdjList>> cycle1 = {edge(0,3,eg.getGraph()).first,edge(3,1,eg.getGraph()).first,edge(1,4,eg.getGraph()).first,edge(4,0,eg.getGraph()).first};
+	std::vector<edge_t<AdjList>> cycle2 = {edge(5,2,eg.getGraph()).first,edge(2,4,eg.getGraph()).first,edge(4,0,eg.getGraph()).first,edge(0,3,eg.getGraph()).first,edge(3,1,eg.getGraph()).first,edge(1,5,eg.getGraph()).first};
+	cutAlongCycle(eg,cycle1);
 
-	cutAlongCycle(pg,cycle1);
-	//cutAlongCycle(pg,cycle2);
+	ASSERT(isOrientable(eg));
+	auto v = planeEmbedding(eg);
+	ASSERT(std::holds_alternative<PlanarGraph<AdjList>>(v));
+
+	//auto pg = std::get<PlanarGraph<AdjList>>(v);
+	//auto dg = chrobakPayneDraw(pg);
+	//writeDOT(dg);
 
 };
 
@@ -101,7 +102,9 @@ auto test_positivetree_2(){
 
 	ASSERT(!isOrientable(eg));
 }
+
 int main(){
 	test_positivetree_1();
 	test_positivetree_2();
+	test_cut_1_sided_cycle();
 }

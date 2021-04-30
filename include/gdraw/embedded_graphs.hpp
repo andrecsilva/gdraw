@@ -41,16 +41,30 @@ auto cutAlongCycle(EmbeddedGraph<Graph>& g, const T& nc_cycle){
 	//maintain an edgelist by index
 	auto edgei_map = get(boost::edge_index,g.getGraph());
 	std::vector<edge_t<Graph>> edges_by_index(num_edges(g.getGraph()));
+	auto ecount = num_edges(g.getGraph());
 
 	for(auto e : range(edges(g.getGraph()))){
 		auto ei = boost::get(edgei_map,e);
 		edges_by_index[ei] = e;
 	}
 
+	auto add_edge_with_index = [&g,&edgei_map,&edges_by_index](auto&& u, auto&& v, auto&& ei){
+			auto h = add_edge(u,v,g.getGraph()).first;
+			boost::put(edgei_map,h,ei);
+			edges_by_index[ei] = h;
+			return h;
+	};
+
+	auto add_extra_edge = [&g,&edgei_map,&edges_by_index,&ecount](auto&& u, auto&& v){
+			auto h = add_edge(u,v,g.getGraph()).first;
+			boost::put(edgei_map,h,ecount++);
+			edges_by_index.push_back(h);
+			return h;
+	};
+
 	//we need to buffer all the edge that will be removed to avoid
 	//invalid pointers midway
 	std::vector<edge_t<Graph>> to_remove;
-	auto ecount = num_edges(g.getGraph());
 
 	//finds a common endpoint between 2 edges, if any
 	auto find_common = [&g](auto e,auto f){
@@ -92,8 +106,8 @@ auto cutAlongCycle(EmbeddedGraph<Graph>& g, const T& nc_cycle){
 	auto first_vertex_p = up;
 
 	//finds the other endpoint of e that is not u
-	auto find_other_endpoint = [&g](auto f,auto u){
-		auto [a,b] = gdraw::endpoints(g.getGraph(),f);
+	auto find_other_endpoint = [&g](auto e,auto u){
+		auto [a,b] = gdraw::endpoints(g.getGraph(),e);
 		return  a!=u? a : b;
 	};
 
@@ -118,34 +132,21 @@ auto cutAlongCycle(EmbeddedGraph<Graph>& g, const T& nc_cycle){
 		auto fp = f;
 		auto fdp = f;
 
-		std::cout << f << (g.signal(f)==1?'+':'-') << " " << u << std::endl;
+		//std::cout << f << (g.signal(f)==1?'+':'-') << " " << u << std::endl;
 
 		if(g.signal(f)==1){
-			fp =  add_edge(up,vp,g.getGraph()).first;
-			auto fp_index = ecount++;
-			boost::put(edgei_map,fp,fp_index);
+			fp = add_extra_edge(up,vp);
 			g.edge_signals.push_back(g.signal(f));
-			edges_by_index[fp_index] = fp;
 			
 		}else{
-			fdp =  add_edge(u,vp,g.getGraph()).first;
-			fp =  add_edge(up,v,g.getGraph()).first;
-
-			auto fdp_index = boost::get(edgei_map,f);
-			boost::put(edgei_map,fdp,fdp_index);
-			edges_by_index[fdp_index] = fdp;
-
-			auto fp_index = ecount++;
-			boost::put(edgei_map,fp,fp_index);
-			edges_by_index[fp_index] = fp;
-
+			fdp =  add_edge_with_index(u,vp,boost::get(edgei_map,f));
+			fp =  add_extra_edge(up,v);
 			g.edge_signals.push_back(g.signal(f));
 
 			to_remove.push_back(f);
-			
 		}
 
-		std::cout << fp << " " << fdp << std::endl;
+		//std::cout << fp << " " << fdp << std::endl;
 
 		//initialize rotations of vp and v
 		//the other cycle edge will be added later
@@ -173,7 +174,7 @@ auto cutAlongCycle(EmbeddedGraph<Graph>& g, const T& nc_cycle){
 				f_index=i;
 		}
 
-		std::cout << e_index << ' ' << f_index << ' ' << std::endl;
+		//std::cout << e_index << ' ' << f_index << ' ' << std::endl;
 
 		for(size_t i =0;i<g.rotations[u].size();++i){
 			auto h = g.rotations[u][i];
@@ -184,24 +185,21 @@ auto cutAlongCycle(EmbeddedGraph<Graph>& g, const T& nc_cycle){
 			auto a = edges_by_index[h_index];
 			auto not_u = find_other_endpoint(a,u);
 
-			std::cout << h << ' ' << a << ' ' << not_u << ' ';
+			//std::cout << h << ' ' << a << ' ' << not_u << ' ';
 
 			if(is_left(i,e_index,f_index)){
-				std::cout << " <-left ";
-				auto k =  add_edge(up,not_u,g.getGraph()).first;
-
-				boost::put(edgei_map,k,h_index);
+				//std::cout << " <-left ";
+				auto k = add_edge_with_index(up,not_u,h_index);
 				new_rotations[up].push_back(k);
-				edges_by_index[h_index] = k;
 				to_remove.push_back(a);
 			}else{
 				if(h!=e && h!=f){
-					std::cout << " <-added ";
+					//std::cout << " <-added ";
 					new_rotations[u].push_back(a);
 				}
 			}
 		}
-		std::cout << std::endl;
+		//std::cout << std::endl;
 
 		new_rotations[u].push_back(fdp);
 		
@@ -222,19 +220,6 @@ auto cutAlongCycle(EmbeddedGraph<Graph>& g, const T& nc_cycle){
 		}
 	}
 
-	for(auto&& e : to_remove){
-		std::cout << "removed: " << e << std::endl;
-		remove_edge(e,g.getGraph());
-	}
-
-	for(auto&& pi_u : new_rotations){
-		for(auto&& e : pi_u){
-			std::cout << (g.signal(e)==1?'+':'-') << e << ' ';
-		}
-		std::cout << std::endl;
-	}
-
-
 	//rotations of the vertices not in the cycle
 	for(size_t i =0; i< g.rotations.size();i++){
 		//auto u = vertex(i,g.getGraph());
@@ -245,11 +230,18 @@ auto cutAlongCycle(EmbeddedGraph<Graph>& g, const T& nc_cycle){
 			for(size_t j =0; j< pi_u.size();j++){
 				auto e = pi_u[j];
 				auto e_index = boost::get(edgei_map,e);
+				//std::cout << e_index << ':' << edges_by_index[e_index] << std::endl;
 				pi_u[j] = edges_by_index[e_index];
 			}
 			new_rotations[i] = std::move(pi_u);
 		}
 	}
+
+	for(auto&& e : to_remove){
+		//std::cout << "removed: " << e << std::endl;
+		remove_edge(e,g.getGraph());
+	}
+
 
 	g.rotations = std::move(new_rotations);
 
@@ -304,7 +296,7 @@ auto positiveSpanningTree(EmbeddedGraph<Graph>& g, std::vector<vertex_t<Graph>>&
  * Modifies the graph as in positiveSpanningTree.
  */
 template <typename Graph>
-auto isOrientable(EmbeddedGraph<Graph> g) -> bool{
+auto isOrientable(EmbeddedGraph<Graph>& g) -> bool{
 	auto root = *(vertices(g.getGraph()).first);
 	auto parent = dfsForest(g,root);
 
