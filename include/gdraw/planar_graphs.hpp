@@ -27,7 +27,7 @@ auto makeMaximal(OrientableEmbeddedGraph<Graph,Genus> g) -> OrientableEmbeddedGr
 
 	auto rotations_pmap = make_iterator_property_map(g.rotations.begin(),get(boost::vertex_index,g.getGraph()));
 	make_biconnected_planar(g.getGraph(),rotations_pmap);
-	
+
 	//Added edges have index 0, we need to fix those for the planarity algorithm
 	auto has_index_0 = [&,original_0_edge,edgei_map](auto&& e){
 		return (e != original_0_edge) && (get(edgei_map,e)==0);
@@ -45,6 +45,9 @@ auto makeMaximal(OrientableEmbeddedGraph<Graph,Genus> g) -> OrientableEmbeddedGr
 
 	for(auto&& e : range(edges(g.getGraph())) | std::views::filter(has_index_0))
 		put(edgei_map,e,ecount++);
+
+	//make sure the signals vector has the appropriate size and values
+	g.edge_signals.resize(num_edges(g.getGraph()),1);
 
 	//make sure the embedding is updated...
 	
