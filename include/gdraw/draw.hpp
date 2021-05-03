@@ -18,7 +18,7 @@ namespace gdraw{
 
 template <typename Graph,typename Range>
 requires VertexRange<Range,Graph>
-auto drawCycle(const Range& cycle,const double radius=1){
+auto drawCycle(const Range& cycle,const double radius=10){
 
 	std::vector<std::pair<vertex_t<Graph>,coord_t>> polygon;
 	double step = 2 * M_PI / (std::ranges::size(cycle));
@@ -40,17 +40,17 @@ auto drawCycle(const Range& cycle,const double radius=1){
 //TODO Use armadillo instead of boost::numeric::ublas?
 //TODO std::allocator::construct is depreceated in c++20, need to change boost's code...
 template <typename Graph,typename DrawnCycle>
-auto buildSystem(const PlanarGraph<Graph>& g,
+auto buildSystem(const Graph& g,
 	       	const DrawnCycle& polygon){
 
-	std::vector<size_t> vertex_to_row(num_vertices(g.getGraph()));
-	size_t size = num_vertices(g.getGraph()) - polygon.size();
+	std::vector<size_t> vertex_to_row(num_vertices(g));
+	size_t size = num_vertices(g) - polygon.size();
 
 	boost::numeric::ublas::matrix<double> A(size,size);
 	boost::numeric::ublas::vector<double> bx(size);
 	boost::numeric::ublas::vector<double> by(size);
 
-	std::vector<std::pair<bool,coord_t>> in_polygon(num_vertices(g.getGraph()),std::make_pair(false,coord_t{0,0}));
+	std::vector<std::pair<bool,coord_t>> in_polygon(num_vertices(g),std::make_pair(false,coord_t{0,0}));
 	//std::cout << "In Polygon: " << std::endl;
 	for(auto&& [u,coord] : polygon){
 		in_polygon[u].first = true;
@@ -59,19 +59,19 @@ auto buildSystem(const PlanarGraph<Graph>& g,
 	}
 
 	int row=0;
-	for (auto&& v : range(vertices(g.getGraph())))
+	for (auto&& v : range(vertices(g)))
 		if(!in_polygon[v].first)
 			vertex_to_row[v]=row++;
 
 
-	for (auto&& v : range(vertices(g.getGraph()))){
+	for (auto&& v : range(vertices(g))){
 		//std::cout << "Vertex: " << v << std::endl;
 		if(!in_polygon[v].first){
-			A(vertex_to_row[v],vertex_to_row[v]) = out_degree(v,g.getGraph());
+			A(vertex_to_row[v],vertex_to_row[v]) = out_degree(v,g);
 			//std::cout << "To Row: " << vertex_to_row[v] << std::endl;
 			//std::cout << A << std::endl;
-			for(auto&& e : range(out_edges(v,g.getGraph()))){
-				auto u = target(e,g.getGraph());
+			for(auto&& e : range(out_edges(v,g))){
+				auto u = target(e,g);
 				//std::cout << "target: " << target(*ei,g) << std::endl;
 				//std::cout << "source: " << u << std::endl;
 				if(in_polygon[u].first){
@@ -125,7 +125,7 @@ auto tutteDraw(PlanarGraph<Graph> g, const Range& facial_cycle) -> DrawnGraph<Gr
 		in_cycle[p.first] = true;
 	}
 
-	auto [A,bx,by,vertex_to_row] = buildSystem(g,drawn_cycle);
+	auto [A,bx,by,vertex_to_row] = buildSystem(g.getGraph(),drawn_cycle);
 	
 	solveSystem(A,bx);
 	solveSystem(A,by);
