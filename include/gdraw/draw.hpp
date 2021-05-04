@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <armadillo>
 
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/lu.hpp>
@@ -15,6 +16,27 @@
 #include <gdraw/planar_graphs.hpp>
 
 namespace gdraw{
+
+/**
+ * Returns the Laplacian Matrix of a graph g.
+ */
+template <typename Graph>
+auto laplacian(const Graph& g){
+	arma::mat D(num_vertices(g),num_vertices(g),arma::fill::zeros);
+
+	for(size_t i=0; i<num_vertices(g); i++){
+		D.diag()(i) = out_degree(vertex(i,g),g);
+	}
+
+	for(auto&& e : range(edges(g))){
+		auto [u,v] = endpoints(g,e);
+		D(u,v) = -1;
+		D(v,u) = D(u,v);
+	}
+
+	return D;
+}
+
 
 template <typename Graph,typename Range>
 requires VertexRange<Range,Graph>
