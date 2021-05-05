@@ -20,7 +20,7 @@ inline auto disjointEdges(auto&& g,auto&& e,auto&& f){
 }
 
 template <typename Graph>
-auto planarXNumber(GraphWrapper<Graph> g, size_t k) -> std::optional<PlanarGraph<Graph>>{
+auto planarXNumber(IndexedGraph<Graph> g, size_t k) -> std::optional<PlanarGraph<Graph>>{
 	auto ecount = num_edges(g.getGraph());
 	auto vcount = num_vertices(g.getGraph());
 	std::vector<edge_t<Graph>> edges_by_index(ecount+2*k);
@@ -98,7 +98,7 @@ auto planarXNumber(GraphWrapper<Graph> g, size_t k) -> std::optional<PlanarGraph
 }
 
 template <typename Graph>
-auto planarXNumberRecursion(GraphWrapper<Graph>& g, size_t k, std::vector<edge_t<Graph>>& edges_by_index, auto& planar_test, auto& fake_cross, auto& uncross){
+auto planarXNumberRecursion(IndexedGraph<Graph>& g, size_t k, std::vector<edge_t<Graph>>& edges_by_index, auto& planar_test, auto& fake_cross, auto& uncross){
 	//std::cout << "k = "  << k<< std::endl;
 	if(k<=1){
 		auto variant_result = gdraw::planeEmbedding(std::move(g));
@@ -155,7 +155,7 @@ auto planarXNumberRecursion(GraphWrapper<Graph>& g, size_t k, std::vector<edge_t
 
 
 template <typename Graph, typename Function>
-auto xNumberRecursion(GraphWrapper<Graph>& g,size_t k, Function& embedd_test, std::vector<edge_t<Graph>>& edges_by_index, auto& fake_cross, auto& uncross){
+auto xNumberRecursion(IndexedGraph<Graph>& g,size_t k, Function& embedd_test, std::vector<edge_t<Graph>>& edges_by_index, auto& fake_cross, auto& uncross){
 	//std::cout << "k = "  << k<< std::endl;
 	if(k<1){
 		return embedd_test(g);
@@ -184,7 +184,7 @@ auto xNumberRecursion(GraphWrapper<Graph>& g,size_t k, Function& embedd_test, st
 
 //TODO: would prefer something more strongly typed 
 template <typename Graph, typename Function>
-auto xNumber(GraphWrapper<Graph> g, size_t k, Function embedd_test){
+auto xNumber(IndexedGraph<Graph> g, size_t k, Function embedd_test){
 	auto ecount = num_edges(g.getGraph());
 	auto vcount = num_vertices(g.getGraph());
 	std::vector<edge_t<Graph>> edges_by_index(ecount+2*k);

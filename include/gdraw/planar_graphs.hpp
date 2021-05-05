@@ -109,7 +109,7 @@ auto findFacialCycle(const OrientableEmbeddedGraph<Graph,Genus>& g) -> std::vect
  * @return : A `std::variant` containing either the graph with an embedding (`PlanarGraph`) or with a list of edges that induces a Kuratowksi subgraph (`NonPlanarGraph`).
  */
 template <typename Graph>
-auto planeEmbedding(GraphWrapper<Graph> g) -> std::variant<PlanarGraph<Graph>,NonPlanarGraph<Graph>>{
+auto planeEmbedding(IndexedGraph<Graph> g) -> std::variant<PlanarGraph<Graph>,NonPlanarGraph<Graph>>{
 
 	std::vector<edge_t<Graph>> kuratowski_edges;
 	rotations_t<Graph> rotations(num_vertices(g.getGraph()));

@@ -21,7 +21,7 @@ boost::vecS
 using namespace gdraw;
 
 auto test_cut_1_sided_cycle(){
-	GraphWrapper<AdjList> g {gdraw::getKpq<AdjList>(3,3)};
+	IndexedGraph<AdjList> g {gdraw::getKpq<AdjList>(3,3)};
 	
 	rotations_t<AdjList> rotations = {
 		{edge(0,3,g.getGraph()).first,edge(0,4,g.getGraph()).first,edge(0,5,g.getGraph()).first},
@@ -55,7 +55,7 @@ auto test_cut_1_sided_cycle(){
 };
 
 auto test_positivetree_1(){
-	GraphWrapper<AdjList> g {gdraw::getKn<AdjList>(4)};
+	IndexedGraph<AdjList> g {gdraw::getKn<AdjList>(4)};
 	auto mg = planeEmbedding(std::move(g));
 	EmbeddedGraph<AdjList> pg = std::get<PlanarGraph<AdjList>>(mg);
 
@@ -81,7 +81,7 @@ auto test_positivetree_1(){
 }
 
 auto test_positivetree_2(){
-	GraphWrapper<AdjList> g {gdraw::getKpq<AdjList>(3,3)};
+	IndexedGraph<AdjList> g {gdraw::getKpq<AdjList>(3,3)};
 	
 	rotations_t<AdjList> rotations = {
 		{edge(0,3,g.getGraph()).first,edge(0,4,g.getGraph()).first,edge(0,5,g.getGraph()).first},

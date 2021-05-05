@@ -25,7 +25,7 @@ using AdjList = boost::adjacency_list<
 using namespace gdraw;
 
 auto test_isPlanar(){
-	auto k5 = GraphWrapper<AdjList>{getKn<AdjList>(5)};
+	auto k5 = IndexedGraph<AdjList>{getKn<AdjList>(5)};
 
 	auto v = planeEmbedding(k5);
 
@@ -45,24 +45,24 @@ auto test_isPlanar(){
 
 auto test_maximal(){
 	size_t n = 3;
-	auto g = GraphWrapper{genPath<AdjList>(n)};
+	auto g = IndexedGraph{genPath<AdjList>(n)};
 
 	auto pg = std::get<PlanarGraph<AdjList>>(planeEmbedding(g));
 
 	pg = makeMaximal(std::move(pg));
 
-	printGraph(pg);
+	//printGraph(pg);
 
-	ASSERT(num_edges(pg.getGraph()) == 3*n - 6);
+	ASSERT(num_edges(pg.getGraph()) == 3*(n+1) - 6);
 }
 
 
 auto test_planarXNumber()
 {
-	auto g = GraphWrapper<AdjList>{gdraw::getKpq<AdjList>(3,4)};
-	auto h = GraphWrapper<AdjList>{gdraw::getKpq<AdjList>(3,3)};
-	auto k = GraphWrapper<AdjList>{gdraw::getKn<AdjList>(6)};
-	auto l = GraphWrapper<AdjList>{gdraw::getKn<AdjList>(4)};
+	auto g = IndexedGraph<AdjList>{gdraw::getKpq<AdjList>(3,4)};
+	auto h = IndexedGraph<AdjList>{gdraw::getKpq<AdjList>(3,3)};
+	auto k = IndexedGraph<AdjList>{gdraw::getKn<AdjList>(6)};
+	auto l = IndexedGraph<AdjList>{gdraw::getKn<AdjList>(4)};
 
 	ASSERT(!planarXNumber(std::move(g),1));
 	ASSERT(planarXNumber(std::move(h),2));
@@ -72,7 +72,7 @@ auto test_planarXNumber()
 
 auto test_doubleCover()
 {
-	auto g = GraphWrapper<AdjList>{gdraw::getKpq<AdjList>(3,3)};
+	auto g = IndexedGraph<AdjList>{gdraw::getKpq<AdjList>(3,3)};
 	add_edge(0,1,g.getGraph());
 
 	std::vector<edge_t<AdjList>> xedges = {edge(0,3,g.getGraph()).first,edge(1,4,g.getGraph()).first,edge(2,5,g.getGraph()).first};
@@ -92,9 +92,9 @@ auto test_doubleCover()
 auto test_doublePlanarCover()
 {
 
-	auto g = GraphWrapper<AdjList>{gdraw::getKn<AdjList>(6)};
+	auto g = IndexedGraph<AdjList>{gdraw::getKn<AdjList>(6)};
 
-	auto result = findDoublePlanarCover(g);
+	auto result = findDoublePlanarCover(std::move(g));
 
 	ASSERT(result);
 }

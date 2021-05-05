@@ -62,7 +62,7 @@ void dfsTreeVisit(const Graph& g, const vertex_t<Graph>& u, std::vector<vertex_t
  * the parent for each vertex.
  */
 template <typename Graph>
-auto dfsForest(const GraphWrapper<Graph>& g, vertex_t<Graph>& root){
+auto dfsForest(const IndexedGraph<Graph>& g, vertex_t<Graph>& root){
 
 	std::vector<vertex_t<Graph>> parent(num_vertices(g.getGraph()),boost::graph_traits<Graph>::null_vertex());
 	parent[root] = root;

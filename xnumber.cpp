@@ -22,7 +22,7 @@ int main(int argc, char *argv[]){
 	}
 	int k = atoi(argv[1]);
 	//std::cin >> k;
-	auto g = gdraw::GraphWrapper<AdjList>{gdraw::readDOT<AdjList>()};
+	auto g = gdraw::IndexedGraph<AdjList>{gdraw::readDOT<AdjList>()};
 
 	auto n = num_vertices(g.getGraph());
 

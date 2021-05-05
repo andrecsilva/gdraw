@@ -78,6 +78,8 @@ class GraphWrapper{
 
 		GraphWrapper(const GraphWrapper& other){
 			//base_graph = std::make_unique<Graph>(*other.base_graph);
+			if constexpr (debug)
+			       	std::cout << "GraphWrapper copy constructor" << std::endl;
 			*this = other;
 		}
 
@@ -105,7 +107,6 @@ class GraphWrapper{
 			//base_graph = std::move(other.base_graph);
 			return *this;
 		}
-
 		//TODO Ideally I'd like to make a implicity conversion
 		//TODO Hard to make it work with boost
 		//operator Graph&(){
@@ -122,63 +123,99 @@ class GraphWrapper{
 
 };
 
+template <typename Graph>
+class IndexedGraph : public GraphWrapper<Graph>{
+	public:
+		boost::property_map<Graph, boost::vertex_index_t>::type vertexi_map;
+		boost::property_map<Graph, boost::edge_index_t>::type edgei_map;
+
+		IndexedGraph(Graph g) 
+		: GraphWrapper<Graph>(std::move(g))
+		{
+			vertexi_map = get( boost::vertex_index, g);
+			edgei_map = get( boost::edge_index, g);
+		}
+
+		IndexedGraph(const IndexedGraph<Graph>& other) 
+		: GraphWrapper<Graph>(other)
+		{
+			if constexpr (debug)
+				std::cout << "IndexedGraph copy constructor" << std::endl;
+			vertexi_map = get( boost::vertex_index, this->getGraph());
+			edgei_map = get( boost::edge_index, this->getGraph());
+		}
+
+		IndexedGraph(IndexedGraph&& other)
+		: GraphWrapper<Graph>(std::move(other)){
+			if constexpr (debug)
+				std::cout << "IndexedGraph move constructor" << std::endl;
+			vertexi_map = get( boost::vertex_index, this->getGraph());
+			edgei_map = get( boost::edge_index, this->getGraph());
+		}
+
+		IndexedGraph& operator=(IndexedGraph&& other){
+			GraphWrapper<Graph>::operator=(std::move(other));
+			if constexpr (debug)
+				std::cout << "IndexedGraph move assignment" << std::endl;
+			vertexi_map = get( boost::vertex_index, this->getGraph());
+			edgei_map = get( boost::edge_index, this->getGraph());
+			return *this;
+		}
+
+		IndexedGraph& operator=(const IndexedGraph& other){
+			GraphWrapper<Graph>::operator=(other);
+			if constexpr (debug)
+				std::cout << "IndexedGraph copy assignment" << std::endl;
+			(*this) = IndexedGraph(other);
+			return *this;
+		}
+
+		inline auto index(edge_t<Graph> e) const{
+			return boost::get(edgei_map,e);
+		}
+
+		inline auto index(vertex_t<Graph> v) const{
+			return boost::get(vertexi_map,v);
+		}
+
+		void change_index(edge_t<Graph> e, auto i) const{
+			boost::put(edgei_map,e,i);
+		}
+
+
+		//num_vertices
+		//num_edges
+		//edge range
+		//vertices range
+		//add_edge_with_index(e,i)
+		//add_edge(e)
+		//endpoints(e)
+
+};
+
 template <template <typename> typename T,typename Graph>
 concept AsGraphWrapper = std::convertible_to<T<Graph>,GraphWrapper<Graph>>;
-
-//template<typename Graph>
-//class HasGraphWrapper{
-//
-//	protected: 
-//		HasGraphWrapper(GraphWrapper<Graph> g) : graph(std::move(g)){}
-//		GraphWrapper<Graph> graph;
-//	public:
-//		Graph& getGraph() const{
-//			return graph.getGraph();
-//		}
-//
-//		Graph& getGraph(){
-//			return graph.getGraph();
-//		}
-//		
-//		//operator GraphWrapper<Graph>() const{
-//		//	return graph;
-//		//}
-//		//
-//		operator GraphWrapper<Graph>&(){
-//			return graph;
-//		}
-//
-//		operator GraphWrapper<Graph>&() const{
-//			return graph;
-//		}
-//
-//		//operator GraphWrapper<Graph>&&() const{
-//		//	return std::move(graph);
-//		//}
-//};
-
-
 
 /**
  * An abstract class dealing with the internals of rotations.
  * You probaly do not want to use this.
  */
 template <typename Graph>
-class PureEmbeddedGraph : public GraphWrapper<Graph>{
+class PureEmbeddedGraph : public IndexedGraph<Graph>{
 	public:
 		rotations_t<Graph> rotations;
 
-		PureEmbeddedGraph(GraphWrapper<Graph> g, rotations_t<Graph> rotations)
-		: GraphWrapper<Graph>(std::move(g)),
+		PureEmbeddedGraph(IndexedGraph<Graph> g, rotations_t<Graph> rotations)
+		: IndexedGraph<Graph>(std::move(g)),
 		rotations(std::move(rotations)){}
 
-		PureEmbeddedGraph(PureEmbeddedGraph&& other) : GraphWrapper<Graph>(std::move(other)){
+		PureEmbeddedGraph(PureEmbeddedGraph&& other) : IndexedGraph<Graph>(std::move(other)){
 			if constexpr(debug)
 				std::cout << "PureEmbeddedGraph Move build" << std::endl;
 			(*this).rotations = std::move(other.rotations);
 		}
 
-		PureEmbeddedGraph(const PureEmbeddedGraph& other) : GraphWrapper<Graph>(other){
+		PureEmbeddedGraph(const PureEmbeddedGraph& other) : IndexedGraph<Graph>(other){
 			if constexpr(debug)
 				std::cout << "PureEmbeddedGraph Copy build" << std::endl;
 			(*this).rotations = rotations_t<Graph>(num_vertices(other.getGraph()));
@@ -220,7 +257,7 @@ class PureEmbeddedGraph : public GraphWrapper<Graph>{
 		PureEmbeddedGraph& operator=(PureEmbeddedGraph&& other){
 			if constexpr(debug)
 				std::cout << "PureEmbeddedGraph Move =" << std::endl;
-			GraphWrapper<Graph>::operator=(std::move(other));
+			IndexedGraph<Graph>::operator=(std::move(other));
 			(*this).rotations = std::move(other.rotations);
 			return *this;
 		}
@@ -242,7 +279,7 @@ class EmbeddedGraph : public PureEmbeddedGraph<Graph>{
 	public:
 		std::vector<int> edge_signals;
 
-		EmbeddedGraph(GraphWrapper<Graph> g, rotations_t<Graph> rotations, std::vector<int> edge_signals):
+		EmbeddedGraph(IndexedGraph<Graph> g, rotations_t<Graph> rotations, std::vector<int> edge_signals):
 			PureEmbeddedGraph<Graph>{std::move(g),std::move(rotations)},
 			edge_signals(std::move(edge_signals)){}
 
@@ -264,11 +301,11 @@ class OrientableEmbeddedGraph : public EmbeddedGraph<Graph>{
 
 	public:
 
-		OrientableEmbeddedGraph(GraphWrapper<Graph> g, rotations_t<Graph> rotations,std::vector<int> edge_signals):
+		OrientableEmbeddedGraph(IndexedGraph<Graph> g, rotations_t<Graph> rotations,std::vector<int> edge_signals):
 			EmbeddedGraph<Graph>{std::move(g),std::move(rotations),std::move(edge_signals)}{}
 			//,euler_characteristic(std::move(euler_characteristic)) {}
 			
-		OrientableEmbeddedGraph(GraphWrapper<Graph> g, rotations_t<Graph> rotations):
+		OrientableEmbeddedGraph(IndexedGraph<Graph> g, rotations_t<Graph> rotations):
 			EmbeddedGraph<Graph>{std::move(g),std::move(rotations),std::vector<int>(num_edges(g.getGraph()))} {}
 
 		inline auto signal(edge_t<Graph>) const -> int{
@@ -283,7 +320,7 @@ template <typename Graph, int EulerGenus>
 class NonOrientableEmbeddedGraph : public EmbeddedGraph<Graph>{
 
 	public:
-		NonOrientableEmbeddedGraph(GraphWrapper<Graph> g, rotations_t<Graph> rotations,std::vector<int> edge_signals):
+		NonOrientableEmbeddedGraph(IndexedGraph<Graph> g, rotations_t<Graph> rotations,std::vector<int> edge_signals):
 			EmbeddedGraph<Graph>{std::move(g),std::move(rotations),std::move(edge_signals)}{}
 
 		inline auto genus() -> int{
@@ -297,21 +334,21 @@ class NonOrientableEmbeddedGraph : public EmbeddedGraph<Graph>{
  * A graph togheter with a list of edges that induces a forbidden subgraph.
  */
 template <typename Graph>
-class NonEmbeddableGraph : public GraphWrapper<Graph>{
+class NonEmbeddableGraph : public IndexedGraph<Graph>{
 
 	public:
 		std::vector<edge_t<Graph>> forbidden_subgraph;
 
-		NonEmbeddableGraph(GraphWrapper<Graph> g, std::vector<edge_t<Graph>> forbidden_subgraph):
-			GraphWrapper<Graph>(std::move(g)),
+		NonEmbeddableGraph(IndexedGraph<Graph> g, std::vector<edge_t<Graph>> forbidden_subgraph):
+			IndexedGraph<Graph>(std::move(g)),
 			forbidden_subgraph(std::move(forbidden_subgraph)) {}
 
-		NonEmbeddableGraph(NonEmbeddableGraph&& other) : GraphWrapper<Graph>(std::move(other)), forbidden_subgraph(std::move(other.forbidden_subgraph)){
+		NonEmbeddableGraph(NonEmbeddableGraph&& other) : IndexedGraph<Graph>(std::move(other)), forbidden_subgraph(std::move(other.forbidden_subgraph)){
 			if constexpr(debug)
 				std::cout << "NonEmbeddableGraph Move Constructor" << std::endl;
 		}
 
-		NonEmbeddableGraph(const NonEmbeddableGraph& other) : GraphWrapper<Graph>(other){
+		NonEmbeddableGraph(const NonEmbeddableGraph& other) : IndexedGraph<Graph>(other){
 			if constexpr(debug)
 				std::cout << "NonEmbeddableGraph Copy Constructor" << std::endl;
 			auto this_edgei_map = get(boost::edge_index, (*this).getGraph());
@@ -336,7 +373,7 @@ class NonEmbeddableGraph : public GraphWrapper<Graph>{
 		NonEmbeddableGraph& operator=(NonEmbeddableGraph&& other){
 			if constexpr(debug)
 				std::cout << "NonEmbeddableGraph Move =" << std::endl;
-			GraphWrapper<Graph>::operator=(std::move(other));
+			IndexedGraph<Graph>::operator=(std::move(other));
 			(*this).forbidden_subgraph = std::move(other.forbidden_subgraph);
 			return *this;
 		}
@@ -355,7 +392,7 @@ class NonEmbeddableGraph : public GraphWrapper<Graph>{
  * Edges are drawn as cubic splines and are stored on `edge_coordinates`. Edges whose coordinates are not include there should be interpreted as a line segment between its endpoints.
  */
 template <typename Graph>
-class DrawnGraph : public GraphWrapper<Graph>{
+class DrawnGraph : public IndexedGraph<Graph>{
 
 	public:
 		std::vector<coord_t> coordinates;
@@ -363,8 +400,8 @@ class DrawnGraph : public GraphWrapper<Graph>{
 		std::map<edge_t<Graph>,cubicSpline> edge_coordinates;
 		std::map<edge_t<Graph>,std::string> edge_colors;
 
-		DrawnGraph(GraphWrapper<Graph> g, std::vector<coord_t> coordinates):
-			GraphWrapper<Graph>(std::move(g)),
+		DrawnGraph(IndexedGraph<Graph> g, std::vector<coord_t> coordinates):
+			IndexedGraph<Graph>(std::move(g)),
 			coordinates(std::move(coordinates)),
        			vertex_colors(num_vertices((*this).getGraph()),""){
 				//std::cout << "Constructor DrawnGraph" << std::endl;
@@ -372,14 +409,14 @@ class DrawnGraph : public GraphWrapper<Graph>{
 				//std::cout << "Num_vertices: " << num_vertices(this->getGraph()) << std::endl;
 			}
 
-		DrawnGraph(GraphWrapper<Graph> g, std::vector<coord_t> coordinates,std::map<edge_t<Graph>,cubicSpline> edge_coordinates):
-			GraphWrapper<Graph>(std::move(g)),
+		DrawnGraph(IndexedGraph<Graph> g, std::vector<coord_t> coordinates,std::map<edge_t<Graph>,cubicSpline> edge_coordinates):
+			IndexedGraph<Graph>(std::move(g)),
 			coordinates(std::move(coordinates)),
        			vertex_colors(num_vertices((*this).getGraph()),""),
 			edge_coordinates(std::move(edge_coordinates)){}
 
 		DrawnGraph(DrawnGraph&& other):
-		       	GraphWrapper<Graph>(std::move(other)),
+		       	IndexedGraph<Graph>(std::move(other)),
        			vertex_colors(std::move(other.vertex_colors)),
 			edge_coordinates(std::move(other.edge_coordinates)),
 			edge_colors(std::move(other.edge_colors)){
@@ -387,7 +424,7 @@ class DrawnGraph : public GraphWrapper<Graph>{
 					std::cout << "DrawnGraph Move constructor" << std::endl;
 			}
 
-		DrawnGraph(const DrawnGraph& other) : GraphWrapper<Graph>(other){
+		DrawnGraph(const DrawnGraph& other) : IndexedGraph<Graph>(other){
 			if constexpr(debug)
 				std::cout << "DrawnGraph Copy constructor" << std::endl;
 			coordinates = other.coordinates;
@@ -421,7 +458,7 @@ class DrawnGraph : public GraphWrapper<Graph>{
 		DrawnGraph& operator=(DrawnGraph&& other){
 			if constexpr(debug)
 				std::cout << "DrawnGraph Move =" << std::endl;
-			GraphWrapper<Graph>::operator=(std::move(other));
+			IndexedGraph<Graph>::operator=(std::move(other));
 			(*this).edge_colors = std::move(other.edge_colors);
 			(*this).edge_coordinates = std::move(other.edge_coordinates);
 			(*this).vertex_colors = std::move(other.vertex_colors);
@@ -464,7 +501,7 @@ using ProjectivePlanarGraph = NonOrientableEmbeddedGraph<Graph,2>;
  * Returns a copy of g and g_edges such that the copy of g_edges are valid descriptors in the copied graph.
  *
  * Mostly used for debugging purposes or internally.
- * @return: a tuple containing a `GraphWrapper` and a `EdgeRange`
+ * @return: a tuple containing a `IndexedGraph` and a `EdgeRange`
  */
 auto graph_copy(const auto& g, const auto& g_edges){
 	//decltype(g) h = g;
@@ -495,7 +532,7 @@ auto graph_copy(const auto& g, const auto& g_edges){
 /** Lists all the vertices and edges of a graph with its indexes.
  */
 template <typename Graph>
-void printGraph(const GraphWrapper<Graph>& g){
+void printGraph(const IndexedGraph<Graph>& g){
 	std::cout << "Vertices: " << std::endl;
 	for(auto&& v : range(vertices(g.getGraph())))
 		std::cout << v << ' ';

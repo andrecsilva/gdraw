@@ -33,7 +33,7 @@ auto is1Sided(const NonOrientableEmbeddedGraph<Graph,Genus>& g, const T& cycle) 
 
 template <typename Graph, typename Range>
 requires EdgeRange<Range,Graph>
-auto doubleCover(GraphWrapper<Graph>&& g,Range&& xedges) -> GraphWrapper<Graph>{
+auto doubleCover(IndexedGraph<Graph>&& g,Range&& xedges) -> IndexedGraph<Graph>{
 
 	//printGraph(g);
 	auto n = num_vertices(g.getGraph());
@@ -82,9 +82,8 @@ auto doubleCover(GraphWrapper<Graph>&& g,Range&& xedges) -> GraphWrapper<Graph>{
 }
 
 
-template<template<typename> typename Wrapper,typename Graph>
-requires AsGraphWrapper<Wrapper,Graph>
-auto findDoublePlanarCover(Wrapper<Graph> g) -> std::optional<PlanarGraph<Graph>>{
+template <typename Graph>
+auto findDoublePlanarCover(IndexedGraph<Graph> g) -> std::optional<PlanarGraph<Graph>>{
 
 	auto tree_edges = randomSpanningTree(g);
 

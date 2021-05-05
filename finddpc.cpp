@@ -17,7 +17,7 @@ int main(){
 
 	using namespace gdraw;
 
-	auto g = GraphWrapper{readDOT<AdjList>()};
+	auto g = IndexedGraph{readDOT<AdjList>()};
 
 	auto n = num_vertices(g.getGraph());
 

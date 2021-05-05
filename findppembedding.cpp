@@ -17,7 +17,7 @@ boost::vecS
 int main(){
 	using namespace gdraw;
 
-	auto g = GraphWrapper{readDOT<AdjList>()};
+	auto g = IndexedGraph{readDOT<AdjList>()};
 
 	auto result = findDoublePlanarCover(std::move(g));
 

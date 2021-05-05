@@ -21,7 +21,7 @@ using AdjList = boost::adjacency_list<
 using namespace gdraw;
 
 auto test_dfsTree(){
-	GraphWrapper<AdjList> g = getKpq<AdjList>(4,4);
+	IndexedGraph<AdjList> g = getKpq<AdjList>(4,4);
 	auto u = vertex(2,g.getGraph());
 	auto parent = dfsForest(g,u);
 	std::vector<vertex_t<AdjList>> solution = {
@@ -40,7 +40,7 @@ auto test_dfsTree(){
 }
 
 auto test_dfsForest(){
-	GraphWrapper<AdjList> g(8);
+	IndexedGraph<AdjList> g(8);
 	add_edge(0,1,g.getGraph());
 	add_edge(0,2,g.getGraph());
 	add_edge(1,3,g.getGraph());

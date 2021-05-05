@@ -21,17 +21,19 @@ namespace gdraw{
  * Returns the Laplacian Matrix of a graph g.
  */
 template <typename Graph>
-auto laplacian(const Graph& g){
-	arma::mat D(num_vertices(g),num_vertices(g),arma::fill::zeros);
+auto laplacian(const IndexedGraph<Graph>& g){
 
-	for(size_t i=0; i<num_vertices(g); i++){
-		D.diag()(i) = out_degree(vertex(i,g),g);
+	arma::mat D(num_vertices(g.getGraph()),num_vertices(g.getGraph()),arma::fill::zeros);
+
+	for(size_t i=0; i<num_vertices(g.getGraph()); i++){
+		D.diag()(i) = out_degree(vertex(i,g.getGraph()),g.getGraph());
 	}
 
-	for(auto&& e : range(edges(g))){
-		auto [u,v] = endpoints(g,e);
-		D(u,v) = -1;
-		D(v,u) = D(u,v);
+	for(auto&& e : range(edges(g.getGraph()))){
+		auto [u,v] = endpoints(g.getGraph(),e);
+		auto [i,j] = std::make_tuple(g.index(u),g.index(v));
+		D(i,j) = -1;
+		D(i,j) = D(u,v);
 	}
 
 	return D;
