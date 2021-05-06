@@ -28,7 +28,21 @@ concept EdgeRange = std::ranges::range<T> && std::is_same<std::remove_cvref_t<st
 template <typename T,typename Graph>
 concept VertexRange = std::ranges::range<T> && std::is_same<std::remove_cvref_t<std::ranges::range_reference_t<T>>,vertex_t<Graph>>::value;
 
-constexpr bool debug = 0;
+constexpr bool debug = 1;
+
+namespace detail{
+
+	template <typename Graph>
+	inline auto edges_iterator(Graph& g){
+		return edges(g);
+	}
+
+	template <typename Graph>
+	inline auto vertices_iterator(Graph& g){
+		return vertices(g);
+	}
+
+}
 
 /**
  * Auxiliary function that transforms the iterator pair from boost::edges into a proper viewable range.
@@ -178,20 +192,118 @@ class IndexedGraph : public GraphWrapper<Graph>{
 			return boost::get(vertexi_map,v);
 		}
 
-		void change_index(edge_t<Graph> e, auto i) const{
+		auto changeIndex(edge_t<Graph> e, auto i) const -> void{
 			boost::put(edgei_map,e,i);
 		}
 
+		auto addEdge(vertex_t<Graph> u, vertex_t<Graph> v, auto i) -> edge_t<Graph>{
+			auto e = add_edge(u,v,this->getGraph()).first;
+			boost::put(edgei_map,e,i);
+			return e;
+		}
 
-		//num_vertices
-		//num_edges
-		//edge range
-		//vertices range
-		//add_edge_with_index(e,i)
-		//add_edge(e)
-		//endpoints(e)
+		auto addEdge(vertex_t<Graph> u, vertex_t<Graph> v) -> edge_t<Graph>{
+			auto e = add_edge(u,v,this->getGraph()).first;
+			boost::put(edgei_map,e,num_edges(this->getGraph()));
+			return e;
+		}
+
+		//auto remove_edge(edge_t<Graph> e){
+		//	auto e_index = g.index(e);
+		//	auto f = edges_by_index[ecount-1];
+		//	edges_by_index[e_index] = f;
+		//	g.change_index(f,e_index);
+		//}
+
+		inline auto edges(){
+			return range(detail::edges_iterator(this->getGraph()));
+		}
+
+		inline auto vertices(){
+			return range(detail::vertices_iterator(this->getGraph()));
+		}
+
+		inline auto numEdges(){
+			return num_edges(this->getGraph());
+		}
+
+		inline auto numVertices(){
+			return num_vertices(this->getGraph());
+		}
+
+		inline auto endpoints(edge_t<Graph> e){
+			return std::make_tuple(source(e,this->getGraph()),target(e,this->getGraph()));
+		}
 
 };
+
+/**
+ * Constructs and maintain edge list for the given IndexedGraph. 
+ */
+template <typename Graph>
+class EdgeList{
+
+	public:
+		std::vector<edge_t<Graph>> edges_by_index;
+
+		IndexedGraph<Graph>& g;
+		
+		boost::graph_traits<Graph>::edges_size_type ecount;
+
+		EdgeList(IndexedGraph<Graph>& g) : g(g){
+
+			edges_by_index = std::vector<edge_t<Graph>>(g.numEdges());
+
+			for(auto&& e : g.edges()){
+				edges_by_index[g.index(e)] = e;
+			}
+
+			ecount = g.numEdges();
+			//std::cout << ecount << std::endl;
+
+		}
+
+		auto addEdge(vertex_t<Graph> u, vertex_t<Graph> v) -> edge_t<Graph>{
+			if(ecount < edges_by_index.size()){
+				auto e = g.addEdge(u,v,ecount);
+				edges_by_index[ecount] = e;
+				ecount++;
+				return e;
+			}else{
+				auto e = g.addEdge(u,v,ecount);
+				edges_by_index.push_back(e);
+				ecount++;
+				return e;
+			}
+		}
+
+		auto addEdge(vertex_t<Graph> u, vertex_t<Graph> v, auto i) -> edge_t<Graph>{
+			auto e = g.addEdge(u,v,i);
+			edges_by_index[i] = e;
+			return e;
+		}
+
+		auto removeEdge(edge_t<Graph> e) -> void{
+			auto e_index = g.index(e);
+			auto f = edges_by_index[ecount-1];
+			edges_by_index[e_index] = f;
+			g.changeIndex(f,e_index);
+			remove_edge(e,g.getGraph());
+			ecount--;
+		}
+
+		inline auto edge(auto i) -> edge_t<Graph>{
+			return edges_by_index[i];
+		}
+
+		auto print() -> void{
+			for(auto&& e : edges_by_index)
+				std::cout << e << '[' << g.index(e) << ']' << ' ';
+			std::cout << std::endl;
+		}
+
+};
+
 
 template <template <typename> typename T,typename Graph>
 concept AsGraphWrapper = std::convertible_to<T<Graph>,GraphWrapper<Graph>>;
