@@ -33,7 +33,7 @@ auto laplacian(const IndexedGraph<Graph>& g){
 		auto [u,v] = endpoints(g.getGraph(),e);
 		auto [i,j] = std::make_tuple(g.index(u),g.index(v));
 		D(i,j) = -1;
-		D(i,j) = D(u,v);
+		D(j,i) = D(u,v);
 	}
 
 	return D;
