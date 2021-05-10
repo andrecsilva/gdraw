@@ -62,10 +62,22 @@ auto test_build_system(){
 	ASSERT(by(1) = 4);
 }
 
+auto test_tuttedrawing1(){
+	auto g = IndexedGraph<AdjList>{getKpq<AdjList>(2,3)};
+	auto L = laplacian(g);
+	
+	std::vector<vertex_t<AdjList>> cycle {0,2,1,3};
+	std::vector<coord_t> cycle_coordinates = {{0,-3},{0,3},{3,0},{-3,0}};
+
+	auto coordinates = tutteDrawImpl(g,cycle,cycle_coordinates);
+
+	ASSERT(coordinates[4].x ==0 && coordinates[4].y ==0);
+}
+
 
 auto test_cpdrawing(){
 
-	auto g = GraphWrapper{genCycle<AdjList>(5)};
+	auto g = IndexedGraph{genCycle<AdjList>(5)};
 
 	auto pg = std::get<PlanarGraph<AdjList>>(planeEmbedding(g));
 

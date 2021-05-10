@@ -39,30 +39,119 @@ auto laplacian(const IndexedGraph<Graph>& g){
 	return D;
 }
 
+/**
+ * Returns an list of vertices not in the cycle ordered by its indices.
+ */
+template <typename Graph>
+auto not_in_cycle(const IndexedGraph<Graph>& g, const std::vector<vertex_t<Graph>>& cycle){
 
-template <typename Graph,typename Range>
-requires VertexRange<Range,Graph>
-auto drawCycle(const Range& cycle,const double radius=10){
+	std::vector<bool> in_cycle(num_vertices(g.getGraph()),false);
+	for(auto&& v : cycle)
+		in_cycle[g.index(v)]=true;
 
-	std::vector<std::pair<vertex_t<Graph>,coord_t>> polygon;
-	double step = 2 * M_PI / (std::ranges::size(cycle));
-	for(auto i =0; auto&& v : cycle){
+	//for(size_t i =0; i< in_cycle.size(); i++)
+	//	std::cout << in_cycle[i] << ' ';
+	//std::cout << std::endl;
+
+	std::vector<vertex_t<Graph>> not_in_cycle;
+
+	for(size_t i=0;i<num_vertices(g.getGraph()); i++)
+		if(!in_cycle[i])
+			not_in_cycle.push_back(vertex(i,g.getGraph()));
+
+	return not_in_cycle;
+}
+
+/** Draws a graph according to Tutte's algorithm in 
+ * "How to draw a graph". Returns a vector containing
+ * containing the coordinates of g's vertices.
+ */
+template <typename Graph>
+auto tutteDrawImpl(IndexedGraph<Graph>& g,
+	       	std::vector<vertex_t<Graph>>& cycle,
+	       	std::vector<coord_t>& cycle_coordinates
+	       	){
+	auto L = laplacian(g);
+
+	arma::vec cx(g.numVertices(),arma::fill::zeros);
+	arma::vec cy(g.numVertices(),arma::fill::zeros);
+
+	for(size_t i=0; i<cycle_coordinates.size(); i++){
+		cx(cycle[i]) = cycle_coordinates[i].x ;
+		cy(cycle[i]) = cycle_coordinates[i].y ;
+
+	}
+
+	auto ncycle = not_in_cycle(g,cycle);
+	arma::uvec idx(ncycle.size());
+
+	for(size_t i =0; i< ncycle.size(); i++)
+		idx(i)=ncycle[i];
+
+	arma::uvec zero(1);
+	zero(0) = 0;
+
+	//strikeout the indices not in idx and invert it
+	arma::mat Li = arma::inv_sympd(L(idx,idx));
+
+	arma::mat bx = L*(-1 * cx);
+	bx = bx.submat(idx,zero);
+	arma::mat by = L*(-1 * cy);
+	by = by.submat(idx,zero);
+
+	arma::vec sbx = Li * bx;
+	arma::vec sby = Li * by;
+
+	arma::vec scx(g.numVertices(),arma::fill::zeros);
+	arma::vec scy(g.numVertices(),arma::fill::zeros);
+
+	for(size_t i = 0; i<ncycle.size(); i++){
+		scx(ncycle[i]) = sbx(i);
+		scy(ncycle[i]) = sby(i);
+	}
+
+	scx = cx + scx;
+	scy = cy + scy;
+
+	std::vector<coord_t> coordinates(g.numVertices());
+	for(size_t i =0; i<g.numVertices(); i++){
+		coordinates[i] = {scx(i),scy(i)};
+	}
+
+	return coordinates;
+}
+
+/**
+ * Returns the coordinates of a convex polygon with 
+ * cycle_size vertices and center (0,0).
+ */
+auto drawCycle(size_t cycle_size,const double radius=1){
+
+	std::vector<coord_t> cycle_coordinates;
+	double step = 2 * M_PI / (cycle_size);
+	for(size_t i =0; i< cycle_size; i++) {
 		coord_t coord = {radius*cos(i*step), radius*sin(i*step)};
-		polygon.push_back({v, coord});
-		i++;
+		cycle_coordinates.push_back(coord);
 	}
 
 	//std::cout << "Step: " << step << std::endl;
 	//std::cout << "Step FULL: " << step * cycle.size() << std::endl;
-	//for(auto p : polygon){
-	//	std::cout << p.first << " : " << p.second << std::endl;
+	//for(auto c : cycle_coordinates){
+	//	std::cout << c << ' ';
 	//}
+	//std::cout << std::endl;
 	
-	return polygon;
+	return cycle_coordinates;
 }
 
-//TODO Use armadillo instead of boost::numeric::ublas?
-//TODO std::allocator::construct is depreceated in c++20, need to change boost's code...
+template <typename Graph>
+auto tuttePlanarDraw(PlanarGraph<Graph> g) -> DrawnGraph<Graph>{
+	auto facial_cycle = findFacialCycle(g);
+	auto cycle_coordinates = drawCycle(facial_cycle.size());
+	auto coordinates = tutteDrawImpl(g,facial_cycle,cycle_coordinates);
+	return DrawnGraph(std::move(g),std::move(coordinates));
+}
+
 template <typename Graph,typename DrawnCycle>
 auto buildSystem(const Graph& g,
 	       	const DrawnCycle& polygon){
@@ -133,7 +222,7 @@ solveSystem(boost::numeric::ublas::matrix<double>& A,
  */
 template <typename Graph,typename Range>
 requires VertexRange<Range,Graph>
-auto tutteDraw(PlanarGraph<Graph> g, const Range& facial_cycle) -> DrawnGraph<Graph>{
+auto tutteDrawBoostImpl(PlanarGraph<Graph> g, const Range& facial_cycle) -> DrawnGraph<Graph>{
 
 	//copy graph here, we don't want the extra edges...
 	auto g_maximal = makeMaximal(g);
@@ -174,7 +263,7 @@ auto tutteDraw(PlanarGraph<Graph> g, const Range& facial_cycle) -> DrawnGraph<Gr
  * Works just like tutteDraw(g,facial_cycle) but this one finds a cycle for you.
  */
 template <typename Graph>
-auto tutteDraw(PlanarGraph<Graph> g) -> DrawnGraph<Graph>{
+auto tutteDrawBoost(PlanarGraph<Graph> g) -> DrawnGraph<Graph>{
 	auto facial_cycle = findFacialCycle(g);
 	return tutteDraw(std::move(g),facial_cycle);
 }
@@ -212,7 +301,7 @@ inline auto crossingSpline(const coord_t& xpoint, const std::pair<coord_t,coord_
 }
 
 template <typename Graph>
-auto drawFlattenedGraph(PlanarGraph<Graph> g, size_t original_vcount, std::function<DrawnGraph<Graph>(PlanarGraph<Graph>)> draw_method = tutteDraw<Graph>) -> DrawnGraph<Graph>{
+auto drawFlattenedGraph(PlanarGraph<Graph> g, size_t original_vcount, std::function<DrawnGraph<Graph>(PlanarGraph<Graph>)> draw_method = tuttePlanarDraw<Graph>) -> DrawnGraph<Graph>{
 
 	auto rotations {g.rotations};
 

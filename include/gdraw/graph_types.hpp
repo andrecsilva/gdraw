@@ -28,7 +28,7 @@ concept EdgeRange = std::ranges::range<T> && std::is_same<std::remove_cvref_t<st
 template <typename T,typename Graph>
 concept VertexRange = std::ranges::range<T> && std::is_same<std::remove_cvref_t<std::ranges::range_reference_t<T>>,vertex_t<Graph>>::value;
 
-constexpr bool debug = 1;
+constexpr bool debug = 0;
 
 namespace detail{
 
@@ -229,6 +229,10 @@ class IndexedGraph : public GraphWrapper<Graph>{
 
 		inline auto numVertices(){
 			return num_vertices(this->getGraph());
+		}
+
+		inline auto degree(vertex_t<Graph> v){
+			return out_degree(v,this->getGraph());
 		}
 
 		inline auto endpoints(edge_t<Graph> e){
