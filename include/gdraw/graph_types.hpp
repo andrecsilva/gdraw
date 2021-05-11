@@ -204,7 +204,7 @@ class IndexedGraph : public GraphWrapper<Graph>{
 
 		auto addEdge(vertex_t<Graph> u, vertex_t<Graph> v) -> edge_t<Graph>{
 			auto e = add_edge(u,v,this->getGraph()).first;
-			boost::put(edgei_map,e,num_edges(this->getGraph()));
+			boost::put(edgei_map,e,num_edges(this->getGraph())-1);
 			return e;
 		}
 
