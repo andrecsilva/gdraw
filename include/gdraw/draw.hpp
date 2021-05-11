@@ -130,7 +130,17 @@ auto drawCycle(size_t cycle_size,const double radius=1){
 	std::vector<coord_t> cycle_coordinates;
 	double step = 2 * M_PI / (cycle_size);
 	for(size_t i =0; i< cycle_size; i++) {
-		coord_t coord = {radius*cos(i*step), radius*sin(i*step)};
+		double x = radius * cos(i*step);
+		if (x <  std::numeric_limits<double>::epsilon() && 
+				    x > -std::numeric_limits<double>::epsilon()) {
+			  x = 0.0;
+		}
+		double y = radius * sin(i*step);
+		if (y <  std::numeric_limits<double>::epsilon() && 
+				    y > -std::numeric_limits<double>::epsilon()) {
+			  y = 0.0;
+		}
+		coord_t coord = {x,y};
 		cycle_coordinates.push_back(coord);
 	}
 
