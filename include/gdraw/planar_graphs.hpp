@@ -69,7 +69,7 @@ struct FacialCyclesVisitor : public boost::planar_face_traversal_visitor{
 	std::vector<Vertex> current_cycle;
 
 	void begin_face(){
-		current_cycle = {};	
+		current_cycle = {};
 		//std::cout << "New Face: " << std::endl;
 	}
 
@@ -99,6 +99,29 @@ auto findFacialCycle(const OrientableEmbeddedGraph<Graph,Genus>& g) -> std::vect
 	auto rotations_pmap = make_iterator_property_map(g.rotations.begin(),get(boost::vertex_index,g.getGraph()));
 	planar_face_traversal(g.getGraph(),rotations_pmap,fcv);
 	return facial_cycles[0];
+}
+
+
+/**
+ * Finds the largest facial cycle in an embedded graph `g`.
+ *
+ * Just a wrap aroung Boost's `planar_face_traversal` function.
+ */
+template <typename Graph>
+auto findLargestFacialCycle(const PlanarGraph<Graph>& g) -> std::vector<vertex_t<Graph>>{
+	std::vector<std::vector<vertex_t<Graph>>> facial_cycles;
+	FacialCyclesVisitor<vertex_t<Graph>> fcv {facial_cycles};
+	auto rotations_pmap = make_iterator_property_map(g.rotations.begin(),get(boost::vertex_index,g.getGraph()));
+	planar_face_traversal(g.getGraph(),rotations_pmap,fcv);
+
+	std::vector<vertex_t<Graph>> largest;
+
+	for(auto&& f : facial_cycles){
+		if (f.size() > largest.size())
+			largest = f;
+	}
+
+	return largest;
 }
 
 /**

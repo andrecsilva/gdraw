@@ -43,6 +43,47 @@ auto test_isPlanar(){
 
 }
 
+auto test_largestfacialcycle(){
+	auto g = IndexedGraph{AdjList(6)};
+
+	//add_edge(0,1,g.getGraph());
+	//
+	g.addEdge(0,5);
+
+	//add_edge(0,3,g.getGraph());
+	//
+	g.addEdge(1,2);
+	g.addEdge(1,5);
+
+	//add_edge(2,3,g.getGraph());
+	//
+	g.addEdge(2,4);
+	g.addEdge(3,4);
+	g.addEdge(4,5);
+
+	g.addEdge(6,1);
+	g.addEdge(6,0);
+	g.addEdge(6,5);
+
+	g.addEdge(7,2);
+	g.addEdge(7,3);
+	g.addEdge(7,4);
+
+	g.addEdge(8,0);
+	g.addEdge(8,5);
+	g.addEdge(8,9);
+
+	g.addEdge(9,3);
+	g.addEdge(9,4);
+
+	g.addEdge(2,5);
+
+	auto pg = std::get<PlanarGraph<AdjList>>(planeEmbedding(g));
+	auto facial_cycle = findLargestFacialCycle(pg);
+	
+	ASSERT(facial_cycle.size() ==8)
+}
+
 auto test_maximal(){
 	size_t n = 3;
 	auto g = IndexedGraph{genPath<AdjList>(n)};
@@ -50,8 +91,6 @@ auto test_maximal(){
 	auto pg = std::get<PlanarGraph<AdjList>>(planeEmbedding(g));
 
 	pg = makeMaximal(std::move(pg));
-
-	//printGraph(pg);
 
 	ASSERT(num_edges(pg.getGraph()) == 3*(n+1) - 6);
 }
@@ -108,4 +147,5 @@ int main(){
 	test_planarXNumber();
 	test_doubleCover();
 	test_doublePlanarCover();
+	test_largestfacialcycle();
 }
