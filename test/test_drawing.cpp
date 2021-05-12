@@ -62,6 +62,23 @@ auto test_build_system(){
 	ASSERT(by(1) = 4);
 }
 
+auto test_laplacian(){
+	auto g = IndexedGraph<AdjList>{getKpq<AdjList>(4,4)};
+	auto L = laplacian(g);
+
+	for(auto&&e : g.edges()){
+		auto [u,v] = g.endpoints(e);
+		auto [i,j] = std::make_tuple(g.index(u),g.index(v));
+		ASSERT(L(i,j) == L(j,i));
+		ASSERT(L(i,j) == -1);
+	}
+
+	for(auto&& v : g.vertices()){
+		auto i = g.index(v);
+		ASSERT(L(i,i) == g.degree(v));
+	}
+}
+
 auto test_tuttedrawing1(){
 	auto g = IndexedGraph<AdjList>{getKpq<AdjList>(2,3)};
 	auto L = laplacian(g);
@@ -94,6 +111,7 @@ int main(){
 	std::cout << "Testing : " << __FILE__ << std::endl;
 
 	test_cpdrawing();
-	test_build_system();
+	test_laplacian();
+	//test_build_system();
 
 }
