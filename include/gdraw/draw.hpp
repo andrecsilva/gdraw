@@ -156,7 +156,7 @@ auto drawCycle(size_t cycle_size,const double radius=1){
 
 template <typename Graph>
 auto tuttePlanarDraw(PlanarGraph<Graph> g) -> DrawnGraph<Graph>{
-	auto facial_cycle = findFacialCycle(g);
+	auto facial_cycle = findLargestFacialCycle(g);
 	auto cycle_coordinates = drawCycle(facial_cycle.size());
 	auto coordinates = tutteDrawImpl(g,facial_cycle,cycle_coordinates);
 	return DrawnGraph(std::move(g),std::move(coordinates));
