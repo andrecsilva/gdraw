@@ -215,28 +215,36 @@ class IndexedGraph : public GraphWrapper<Graph>{
 		//	g.change_index(f,e_index);
 		//}
 
-		inline auto edges(){
+		inline auto edges() const{
 			return range(detail::edges_iterator(this->getGraph()));
 		}
 
-		inline auto vertices(){
+		inline auto vertices() const{
 			return range(detail::vertices_iterator(this->getGraph()));
 		}
 
-		inline auto numEdges(){
+		inline auto incidentEdges(vertex_t<Graph> v) const{
+			return range(out_edges(v,this->getGraph()));
+		}
+
+		inline auto numEdges() const{
 			return num_edges(this->getGraph());
 		}
 
-		inline auto numVertices(){
+		inline auto numVertices() const{
 			return num_vertices(this->getGraph());
 		}
 
-		inline auto degree(vertex_t<Graph> v){
+		inline auto degree(vertex_t<Graph> v) const{
 			return out_degree(v,this->getGraph());
 		}
 
-		inline auto endpoints(edge_t<Graph> e){
+		inline auto endpoints(edge_t<Graph> e) const{
 			return std::make_tuple(source(e,this->getGraph()),target(e,this->getGraph()));
+		}
+		
+		inline static auto nullVertex(){
+			return boost::graph_traits<Graph>::null_vertex();
 		}
 
 };

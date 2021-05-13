@@ -5,6 +5,7 @@
 #include <utility>
 #include <algorithm>
 #include <ranges>
+#include <optional>
 
 #include <boost/graph/random_spanning_tree.hpp>
 #include <boost/random/mersenne_twister.hpp>
@@ -62,7 +63,7 @@ void dfsTreeVisit(const Graph& g, const vertex_t<Graph>& u, std::vector<vertex_t
  * the parent for each vertex.
  */
 template <typename Graph>
-auto dfsForest(const IndexedGraph<Graph>& g, vertex_t<Graph>& root){
+auto dfsForest(const IndexedGraph<Graph>& g, const vertex_t<Graph>& root){
 
 	std::vector<vertex_t<Graph>> parent(num_vertices(g.getGraph()),boost::graph_traits<Graph>::null_vertex());
 	parent[root] = root;
@@ -84,6 +85,96 @@ auto dfsForest(const IndexedGraph<Graph>& g, vertex_t<Graph>& root){
 	//std::cout << std::endl;
 
 	return parent;
+}
+
+template <typename Graph>
+auto dfsFindCycleVisit(const IndexedGraph<Graph>& g,
+	       	const vertex_t<Graph>& u,
+	       	std::vector<vertex_t<Graph>>& parent) -> std::optional<std::tuple<vertex_t<Graph>,edge_t<Graph>>>{ 
+
+	//std::cout << u << std::endl;
+	for(auto&& e : g.incidentEdges(u)){
+		//std::cout << e << std::endl;
+		auto [a,b] = g.endpoints(e);
+		auto v = a!=u ? a : b;
+		if(parent[v] != IndexedGraph<Graph>::nullVertex()){
+		       if(parent[u] != v)
+			       return {{u,e}};
+	       	}else{
+			parent[v]=u;
+			auto me = dfsFindCycleVisit(g,v,parent);
+			if(me)
+				return me.value();
+		}
+	}
+	return {};
+}
+
+
+/**
+ * Using a tree in parent format, traces a cycle from a back edge
+ */
+template <typename Graph>
+auto buildCycle(const IndexedGraph<Graph>& g, const vertex_t<Graph> u, const edge_t<Graph>& back_edge, const std::vector<vertex_t<Graph>>& parent){
+	//returns a path from u to v, assuming v is an ancestor of u, or to root otherwise
+	auto path_to_vertex = [&g,&parent](auto u,auto v){
+		std::vector<vertex_t<Graph>> path;
+		vertex_t<Graph> p = parent[u];
+		path.push_back(u);
+		while(p != v){
+			path.push_back(p);
+			p = parent[p];
+		}
+		path.push_back(p);
+		return path;
+	};
+
+	auto [a,b] = g.endpoints(back_edge);
+	auto v = a!=u ? a : b;
+	
+	auto u_path = path_to_vertex(u,v);
+
+	//std::cout << "u_path" << std::endl;
+	//for(auto&& v : u_path)
+	//	std::cout << v << ' ';
+	//std::cout << std::endl;
+
+	return u_path;
+}
+
+/**
+ * Finds a cycle in a graph.
+ */
+template <typename Graph>
+auto findCycle(const IndexedGraph<Graph>& g) -> std::optional<std::vector<vertex_t<Graph>>>{
+
+	auto root = *(std::ranges::begin(g.vertices()));
+	std::vector<vertex_t<Graph>> parent(g.numVertices(),IndexedGraph<Graph>::nullVertex());
+
+	parent[root]=root;
+	auto me = dfsFindCycleVisit(g,root,parent);
+	parent[root]=IndexedGraph<Graph>::nullVertex();
+
+	if(me){
+		auto [u,e] = me.value();
+		return buildCycle(g,u,e,parent);
+	}
+
+	parent[root]=root;
+	for(auto&& u : g.vertices()){
+		if(parent[u] == IndexedGraph<Graph>::nullVertex()){
+			parent[u] = u;
+			auto me = dfsFindCycleVisit(g,u,parent);
+			parent[u] = IndexedGraph<Graph>::nullVertex();
+			if(me){
+				auto [v,e] = me.value();
+				return buildCycle(g,v,e,parent);
+			}
+		}
+	}
+	parent[root]=IndexedGraph<Graph>::nullVertex();
+
+	return {};
 }
 
 /*
