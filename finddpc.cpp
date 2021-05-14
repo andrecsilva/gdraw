@@ -24,7 +24,7 @@ int main(){
 	auto result = findDoublePlanarCover(std::move(g));
 
 	if(result){
-		auto dg = tutteDraw(std::move(result.value()));
+		auto dg = tuttePlanarDraw(std::move(result.value()));
 
 		std::vector<edge_t<AdjList>> xedges;
 
