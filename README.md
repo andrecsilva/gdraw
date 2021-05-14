@@ -4,18 +4,22 @@ A small collection of mini-libraries and scripts to planarize and draw graphs.
 
 What it does:
 
-* Find drawings of graphs with k crossings or less (naive roughly O(n^k) algorithm with some improvements, see [1]);
-* Find embeddings in the projective plane/double planar cover for a given graph (exponential, but somewhat fast);
-  * For 3-connected ones, it's possible to list all of them (See [2]);
-* Draw graphs using two different methods (Tutte's [3] and Chrobak-Payne via Boost);
-* Output the drawings in Tex (Tikz) or Pdf (or more if you're willing to change the parameter in the script);
+* Find drawings of graphs with k crossings or less (naive roughly O(n^k) algorithm with some improvements, see [1]).
+* Find embeddings in the projective plane/double planar cover for a given graph (exponential, but somewhat fast).
+  * For 3-connected ones, it's possible to list all of them (See [2]).
+* Draw graphs using two different methods (Tutte's [3] and Chrobak-Payne via Boost).
+* Output the drawings in Tex (Tikz) or Pdf (or more if you're willing to change the parameter in the script).
 * A bunch of smaller things not worth mentioning.
 
 # Build
 
-Make sure you have [BOOST](https://www.boost.org/) and [cppitertools](https://github.com/ryanhaining/cppitertools). Change `LDIR` in the makefile to point to your system's library paths. Just `make`.
+Make sure you have [BOOST](https://www.boost.org/), [cppitertools](https://github.com/ryanhaining/cppitertools) and [armadillo](https://gitlab.com/conradsnicta/armadillo-code). Change `LDIR` in the makefile to point to your system's library paths. Just `make`.
 
 The `draw.sh` script uses `neato` from graphviz and `awk`, so make sure you have those; `drawTikz.py` uses python3.
+
+# Running Tests
+
+Unit tests are contained in `test` subfolder. Use `make test_all` to run all of them or `make test/test_<unit>` for a particular unit.
 
 # Example of Usage 
 
@@ -27,10 +31,10 @@ The `draw.sh` script uses `neato` from graphviz and `awk`, so make sure you have
 
 # Some Examples (Optimal drawing of K<sub>6</sub> and a double planar cover of it)
 
-![alt text][k6drawing] ![alt text][k6dpc]
+![alt text][k6opt] ![alt text][k6dpc]
 
-[k6drawing]: https://github.com/andrecsilva/gdraw/blob/master/k6opt.svg "Optimal drawing of K6."
-[k6dpc]: https://github.com/andrecsilva/gdraw/blob/master/k6dpc.svg "Double planar cover of K6, the red edges are the edges used to generate the cover." 
+[k6opt]: ./k6opt.svg "Optimal drawing of K6."
+[k6dpc]: ./k6dpc.svg "Double planar cover of K6, the red edges are the edges used to generate the cover." 
 
 # Using the Library
 
