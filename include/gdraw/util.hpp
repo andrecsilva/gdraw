@@ -110,6 +110,46 @@ auto dfsFindCycleVisit(const IndexedGraph<Graph>& g,
 	return {};
 }
 
+/**
+ * Returns a bfs tree.
+ */
+template <typename Graph>
+auto bfsTree(const IndexedGraph<Graph>& g, vertex_t<Graph> root){
+	//finds the other endpoint of e that is not u
+	auto other_endpoint = [&g](auto e,auto u){
+		auto [a,b] = g.endpoints(e);
+		return  a!=u? a : b;
+	};
+	std::list<vertex_t<Graph>> queue;
+	queue.push_back(root);
+
+	//tree edges incident with the vertices
+	std::vector<std::optional<edge_t<Graph>>> bfs_edges(g.numVertices());
+	bfs_edges[g.index(root)] = {};
+
+	std::vector<edge_t<Graph>> fundamental_edges;
+
+	while(!queue.empty()){
+		auto u = queue.front();
+		//std::cout << u << std::endl;
+		queue.pop_front();
+
+		for(auto&& e : g.incidentEdges(u)){
+			auto v = other_endpoint(e,u);
+			if(v!=root){
+				auto f = bfs_edges[g.index(v)];
+				if(!f){
+					queue.push_back(v);
+					bfs_edges[g.index(v)] = e;
+				}
+			}
+		}
+	}
+
+	
+	return bfs_edges;
+}
+
 
 /**
  * Using a tree in parent format, traces a cycle from a back edge

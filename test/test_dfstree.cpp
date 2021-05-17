@@ -65,9 +65,47 @@ auto test_dfsForest(){
 	}
 }
 
+auto test_bfstree(){
+	auto g = IndexedGraph{AdjList(7)};
+
+	g.addEdge(0,1);
+	g.addEdge(0,2);
+
+	g.addEdge(1,3);
+	g.addEdge(1,4);
+
+	g.addEdge(2,5);
+	g.addEdge(2,6);
+
+	g.addEdge(3,5);
+	g.addEdge(4,2);
+
+	auto bfs_tree = bfsTree(g,0);
+
+	size_t count = 0;
+	for(auto&& e : bfs_tree){
+		if(e){
+			count++;
+			//std::cout << e.value() << ' ';
+		}
+		else{
+			//std::cout << "none" << ' ';
+		}
+	}
+	//std::cout << std::endl;
+	
+	ASSERT(count == 6);
+
+	//for(auto&& e : fedges)
+	//	std::cout << e << ' ';
+	//std::cout << std::endl;
+}
+
+
 int main(){
 	std::cout << "Testing : " << __FILE__ << std::endl;
 
 	test_dfsTree();
 	test_dfsForest();
+	test_bfstree();
 }
