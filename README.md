@@ -29,12 +29,12 @@ Unit tests are contained in `test` subfolder. Use `make test_all` to run all of 
 ./findppembedding < k6.dot
 ```
 
-# Some Examples (Optimal drawing of K<sub>6</sub> and a double planar cover of it)
+# Some Examples 
 
-![alt text][k6opt] ![alt text][k6dpc]
-
-[k6opt]: ./k6opt.svg "Optimal drawing of K6."
-[k6dpc]: ./k6dpc.svg "Double planar cover of K6, the red edges are the edges used to generate the cover." 
+<p align="center">
+  <img alt="Optimal drawing of K6." src="./k6opt.svg" />
+  <img alt="Double planar cover of K6, the red edges are the edges used to generate the cover." src="./k6dpc.svg" />
+</p>
 
 # Using the Library
 
