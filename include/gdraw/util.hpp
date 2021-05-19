@@ -150,6 +150,69 @@ auto bfsTree(const IndexedGraph<Graph>& g, vertex_t<Graph> root){
 	return bfs_edges;
 }
 
+/**
+ * Returns the fundamental cycle obtained from a rooted tree and an edge.
+ */
+template <typename Graph>
+auto fundamentalCycle(const IndexedGraph<Graph>& g,
+		const std::vector<std::optional<edge_t<Graph>>> tree,
+		const edge_t<Graph> e){
+
+	//assumes v is an ancestor of u
+	auto path_to_vertex = [&g,&tree](auto u,auto v){
+		std::vector<edge_t<Graph>> path;
+		auto parent = u;
+		while(parent!=v){
+			auto tree_edge = tree[parent].value();
+			path.push_back(tree_edge);
+			auto [a,b] = g.endpoints(tree_edge);
+			parent = a!=parent? a : b;
+		}
+		return path;
+	};
+
+	auto [u,v] = g.endpoints(e);
+
+	std::vector<bool> u_ancestor(g.numVertices(),false);
+	u_ancestor[g.index(u)] = true;
+
+	std::optional<edge_t<Graph>> tree_edge = tree[u];
+	auto parent = u;
+
+	while(tree_edge){
+		//std::cout << tree_edge.value() << std::endl;
+		//get parent
+		auto [a,b] = g.endpoints(tree_edge.value());
+		parent = a!=parent? a : b;
+
+		u_ancestor[g.index(parent)] = true;
+
+		tree_edge = tree[parent];
+	}
+
+	tree_edge = tree[v];
+	parent = v;
+
+	while(!u_ancestor[g.index(parent)]){
+		//get parent
+		//std::cout << parent << std::endl;
+		auto [a,b] = g.endpoints(tree_edge.value());
+		parent = a!=parent? a : b;
+		tree_edge = tree[parent];
+	}
+
+	auto& common_ancestor = parent;
+
+	auto u_path = path_to_vertex(u,common_ancestor);
+	auto v_path = path_to_vertex(v,common_ancestor);
+
+	std::reverse(v_path.begin(),v_path.end());
+	
+	std::move(v_path.begin(),v_path.end(),std::back_inserter(u_path));
+	u_path.push_back(e);
+	return u_path;
+}
+
 
 /**
  * Using a tree in parent format, traces a cycle from a back edge
