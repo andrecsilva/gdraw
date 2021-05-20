@@ -75,6 +75,18 @@ inline auto endpoints(const Graph& g,const edge_t<Graph>& e){
 }
 
 /**
+ * Takes a collection of optional elements and returns a view over
+ * all the actual elements of a collection.
+ */
+template <template<typename> typename T,typename U>
+requires std::ranges::range<T<U>>
+auto inline filterOptional(const T<std::optional<U>>& collection){
+	return collection | 
+		std::views::filter([](auto e){return bool(e);}) | 
+		std::views::transform([](auto e){return e.value();});
+}
+
+/**
  * This class wraps a boost graph class and implements move semantics using std::unique_ptr.
  *
  * The reason for the existence of this class is that Boost Graph objects do not play well with move semantics.

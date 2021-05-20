@@ -44,6 +44,13 @@ auto enumerate(size_t min_size, size_t max_size, IterableCollection collection,B
 }
 
 /**
+ * Returns a view of all the tree edges. 
+ */
+auto inline treeEdges(const auto& tree){
+	return filterOptional(tree);
+}
+
+/**
  * Recursive implementation of depth-first search in a graph.
  */
 template <typename Graph>
