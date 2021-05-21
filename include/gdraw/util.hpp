@@ -57,7 +57,7 @@ auto inline cycleVertices(T& cycle, const IndexedGraph<Graph>& g){
 			return v;
 		if(w==x || w==y)
 			return w;
-		return IndexedGraph<AdjList>::nullVertex();
+		return IndexedGraph<Graph>::nullVertex();
 	};
 
 	auto next_vertex = [&cycle,ei=cycle.begin(),&g,&find_common](__attribute__((unused)) auto _) mutable{
@@ -81,7 +81,7 @@ auto inline cycleEdgeVertex(const T& cycle, const IndexedGraph<Graph>& g){
 			return v;
 		if(w==x || w==y)
 			return w;
-		return IndexedGraph<AdjList>::nullVertex();
+		return IndexedGraph<Graph>::nullVertex();
 	};
 
 	auto next_vertex = [&cycle,ei=cycle.begin(),&g,&find_common](auto e) mutable{
