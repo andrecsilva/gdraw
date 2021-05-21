@@ -43,6 +43,55 @@ auto enumerate(size_t min_size, size_t max_size, IterableCollection collection,B
 	return false;
 }
 
+
+/**
+ * Returns a view containing the vertices of a given cycle in g.
+ */
+template <typename T,typename Graph>
+requires std::ranges::forward_range<T> && EdgeRange<T,Graph>
+auto inline cycleVertices(T& cycle, const IndexedGraph<Graph>& g){
+	auto find_common = [&g](auto e,auto f){
+		auto [v,w] = g.endpoints(e);
+		auto [x,y] = g.endpoints(f);
+		if(v==x || v==y)
+			return v;
+		if(w==x || w==y)
+			return w;
+		return IndexedGraph<AdjList>::nullVertex();
+	};
+
+	auto next_vertex = [&cycle,ei=cycle.begin(),&g,&find_common](__attribute__((unused)) auto _) mutable{
+		auto next = ei+1==cycle.end()?cycle.begin():ei++;
+		return find_common(*ei,*next);
+	};
+
+	return cycle | std::views::transform(next_vertex);
+}
+
+/**
+ * Returns a view containing pairs (e,v) such that v is the vertex in common between e and the next edge in the ycle.
+ */
+template <typename T,typename Graph>
+requires std::ranges::forward_range<T> && EdgeRange<T,Graph>
+auto inline cycleEdgeVertex(const T& cycle, const IndexedGraph<Graph>& g){
+	auto find_common = [&g](auto e,auto f){
+		auto [v,w] = g.endpoints(e);
+		auto [x,y] = g.endpoints(f);
+		if(v==x || v==y)
+			return v;
+		if(w==x || w==y)
+			return w;
+		return IndexedGraph<AdjList>::nullVertex();
+	};
+
+	auto next_vertex = [&cycle,ei=cycle.begin(),&g,&find_common](auto e) mutable{
+		auto next = ei+1==cycle.end()?cycle.begin():ei++;
+		return std::make_tuple(e,find_common(*ei,*next));
+	};
+
+	return cycle | std::views::transform(next_vertex);
+}
+
 /**
  * Returns a view of all the tree edges. 
  */
@@ -162,7 +211,7 @@ auto bfsTree(const IndexedGraph<Graph>& g, vertex_t<Graph> root){
  */
 template <typename Graph>
 auto fundamentalCycle(const IndexedGraph<Graph>& g,
-		const std::vector<std::optional<edge_t<Graph>>> tree,
+		const std::vector<std::optional<edge_t<Graph>>>& tree,
 		const edge_t<Graph> e){
 
 	//assumes v is an ancestor of u

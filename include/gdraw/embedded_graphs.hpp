@@ -15,8 +15,8 @@
 
 namespace gdraw{
 
-/*
- * Checks wheter the cycle is 1-sided (if the number of negative signal edges is odd)
+/**
+ * Checks wheter the cycle is 1-sided (if the number of negative signal edges is odd).
  */
 template <typename Graph,EdgeRange<Graph> T>
 auto is1Sided(const EmbeddedGraph<Graph>& g, const T& cycle) -> bool{
