@@ -30,6 +30,39 @@ auto is1Sided(const EmbeddedGraph<Graph>& g, const T& cycle) -> bool{
 	return signal == -1? true: false;
 }
 
+/**
+ * Returns the smallest one-sided cycle. It is done using the fundamental
+ * cycle method. See the book Graphs os Surface for a proof of this.
+ */
+template <typename Graph>
+auto smallest1SidedCycle(const EmbeddedGraph<Graph>& g){
+	
+	using tree_type = decltype(bfsTree(std::declval<IndexedGraph<Graph>>(),
+				std::declval<vertex_t<Graph>>()));
+	decltype(fundamentalCycle(std::declval<IndexedGraph<Graph>>(),
+				std::declval<tree_type>(),
+				std::declval<edge_t<Graph>>())) cycle;
+
+	size_t cycle_size = g.numVertices()+1;
+
+	for(auto&& v : g.vertices()){
+		auto v_bfs_tree = bfsTree(g,v);
+		for(auto&& e : g.edges()){
+			auto [a,b] = g.endpoints(e);
+			if(e != v_bfs_tree[a] && e != v_bfs_tree[b]){
+				//e is not a tree edge
+				auto e_cycle = fundamentalCycle(g,v_bfs_tree,e);
+				if(is1Sided(g,e_cycle) && e_cycle.size()<cycle_size){
+					cycle = std::move(e_cycle);
+					cycle_size = cycle.size();
+				}
+			}
+		}
+	}
+	return cycle;
+}
+
+
 /*
  * Cuts along a non-contractible cycle in an embedded graph. The result is a new graph
  * where for each vertex v of the cycle is split into two vertices.
