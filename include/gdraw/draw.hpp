@@ -154,6 +154,24 @@ auto drawCycle(size_t cycle_size,const double radius=1){
 	return cycle_coordinates;
 }
 
+/**
+ *
+ */
+template <typename Graph>
+auto tutteDraw(IndexedGraph<Graph> g) -> DrawnGraph<Graph>{
+	auto cycle = findCycle(g).value();
+	//for(auto&& v : cycle)
+	//	std::cout << v << ' ';
+	//std::cout << std::endl;
+	auto cycle_coordinates = drawCycle(cycle.size());
+	auto coordinates = tutteDrawImpl(g,cycle,cycle_coordinates);
+	return DrawnGraph(std::move(g),std::move(coordinates));
+}
+
+/**
+ * A wrapper around tutteDrawImpl.
+ * It chooses the largest facial cycle for the algorithm.
+ */
 template <typename Graph>
 auto tuttePlanarDraw(PlanarGraph<Graph> g) -> DrawnGraph<Graph>{
 	auto facial_cycle = findLargestFacialCycle(g);
@@ -365,6 +383,41 @@ auto drawFlattenedGraph(PlanarGraph<Graph> g, size_t original_vcount, std::funct
 
 	return DrawnGraph(std::move(dg), std::move(dg.coordinates), std::move(xcoordinates));;
 
+}
+
+auto intersect(coord_t a,coord_t b, coord_t c, coord_t d) -> bool{
+	double det = (b.x - a.x) * (c.y - d.y) - ((b.y - a.y)*(c.x - d.x));
+
+	double det1 = (c.x - a.x) * (c.y - d.y) - ((c.y - a.y)*(c.x - d.x));
+	double det2 = (b.x - a.x) * (c.y - a.y) - ((b.y - a.y)*(c.x - a.x));
+
+	double s = det1/det;
+	double t = det2/det;
+
+	return (0 + std::numeric_limits<double>::epsilon() <= s && s <= 1-std::numeric_limits<double>::epsilon()) &&
+	 (0 + std::numeric_limits<double>::epsilon() <= t && t <= 1-std::numeric_limits<double>::epsilon());
+}
+
+//TODO could use the nlog n multiple line intersection algorithm here...
+template <typename Graph>
+auto isStraightLineDrawing(const DrawnGraph<Graph>& g) -> bool{
+	auto cross = [&g](auto e,auto f){
+		auto [u_e,v_e] = g.endpoints(e);
+		auto [u_f,v_f] = g.endpoints(f);
+		return intersect(g.coordinates[g.index(u_e)],
+				g.coordinates[g.index(v_e)],
+				g.coordinates[g.index(u_f)],
+				g.coordinates[g.index(v_f)]);
+	};
+	for(auto&& c : iter::combinations(g.edges(),2)){
+		auto e = *(c.begin());
+		auto f = *(c.begin()+1);
+		//std::cout << e << ' ' << f << ' ' << std::boolalpha << cross(e,f) << std::endl;
+		if(cross(e,f))
+			return false;
+	}
+
+	return true;
 }
 
 
