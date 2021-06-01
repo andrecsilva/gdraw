@@ -91,6 +91,30 @@ auto test_tuttedrawing1(){
 	ASSERT(coordinates[4].x ==0 && coordinates[4].y ==0);
 }
 
+auto test_intersect(){
+
+	coord_t a = {1,1};
+	coord_t b = {-1,-1};
+	coord_t c = {1,-1};
+	coord_t d = {-1,1};
+
+	ASSERT(intersect(a,b,c,d));
+}
+
+auto test_sldrawing(){
+
+	auto g = IndexedGraph{genCycle<AdjList>(5)};
+
+	auto pg = std::get<PlanarGraph<AdjList>>(planeEmbedding(g));
+
+	pg = makeMaximal(std::move(pg));
+
+	auto dg = chrobakPayneDraw(pg);
+	
+	ASSERT(isStraightLineDrawing(dg));
+}
+
+
 
 auto test_cpdrawing(){
 
@@ -112,6 +136,9 @@ int main(){
 
 	test_cpdrawing();
 	test_laplacian();
+	test_sldrawing();
+	test_intersect();
+	test_tuttedrawing1();
 	//test_build_system();
 
 }
