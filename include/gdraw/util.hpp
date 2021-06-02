@@ -336,6 +336,70 @@ auto findCycle(const IndexedGraph<Graph>& g) -> std::optional<std::vector<vertex
 	return {};
 }
 
+
+template <typename Graph>
+auto dfsBridgesVisit(const IndexedGraph<Graph>& g,
+	       	const std::vector<bool>& in_subgraph,
+		std::vector<bool>& visited,
+		std::vector<edge_t<Graph>>& bridge_edges,
+	       	vertex_t<Graph> u) -> void{
+	//std::cout << u << std::endl;
+
+	for(auto&& e : g.incidentEdges(u)){
+		bridge_edges.push_back(e);
+
+		//grab the other endpoint
+		auto [a,b] = g.endpoints(e);
+		auto v = a!=u ? a : b;
+
+		if(!visited[v] && !in_subgraph[v]){
+			visited[g.index(v)] = true;
+			dfsBridgesVisit(g,in_subgraph,visited,bridge_edges,v);
+		}
+	}
+}
+
+template <typename Graph>
+auto bridges(const IndexedGraph<Graph>& g, const std::vector<edge_t<Graph>>& subgraph){
+	//returns a vertex list of all the bridges of subgraph
+	//trivial bridges: just check the edge list of all the subgraph vertices
+	std::vector<bool> vertices_in_subgraph(g.numVertices(),false);
+	std::vector<bool> edges_in_subgraph(g.numEdges(),false);
+
+	for(auto&& e : subgraph){
+		auto [a,b] = g.endpoints(e);
+		vertices_in_subgraph[g.index(a)]=true;
+		vertices_in_subgraph[g.index(b)]=true;
+		edges_in_subgraph[g.index(e)]=true;
+	}
+
+	//copy
+	std::vector<bool> visited = vertices_in_subgraph;
+	
+	std::vector<std::vector<edge_t<Graph>>> bridges;
+
+	for(auto&& v : g.vertices()){
+		if(!visited[v]){
+			std::vector<edge_t<Graph>> bridge_edges;
+			visited[v] = true;
+			dfsBridgesVisit(g,vertices_in_subgraph,visited,bridge_edges,v);
+			bridges.push_back(bridge_edges);
+		}
+	}
+
+	//trivial bridges
+	for(auto&& e : g.edges()){
+		if(!edges_in_subgraph[g.index(e)]){
+			//grab the other endpoint
+			auto [a,b] = g.endpoints(e);
+			if(vertices_in_subgraph[g.index(a)] && vertices_in_subgraph[g.index(b)])
+				bridges.push_back({e});
+		}
+	}
+	
+	return bridges;
+}
+
 /*
  * Returns a random spanning tree of g.
  *

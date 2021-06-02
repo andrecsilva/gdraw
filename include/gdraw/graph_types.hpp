@@ -239,6 +239,10 @@ class IndexedGraph : public GraphWrapper<Graph>{
 			return range(out_edges(v,this->getGraph()));
 		}
 
+		inline auto neighbors(vertex_t<Graph> v) const{
+			return range(adjacent_vertices(v,this->getGraph()));
+		}
+
 		inline auto numEdges() const{
 			return num_edges(this->getGraph());
 		}
