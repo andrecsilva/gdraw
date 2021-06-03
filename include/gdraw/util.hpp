@@ -340,21 +340,24 @@ auto findCycle(const IndexedGraph<Graph>& g) -> std::optional<std::vector<vertex
 template <typename Graph>
 auto dfsBridgesVisit(const IndexedGraph<Graph>& g,
 	       	const std::vector<bool>& in_subgraph,
-		std::vector<bool>& visited,
+		std::vector<size_t>& dfs_number,
+		size_t& dfs_count,
 		std::vector<edge_t<Graph>>& bridge_edges,
 	       	vertex_t<Graph> u) -> void{
 	//std::cout << u << std::endl;
 
 	for(auto&& e : g.incidentEdges(u)){
-		bridge_edges.push_back(e);
-
 		//grab the other endpoint
 		auto [a,b] = g.endpoints(e);
 		auto v = a!=u ? a : b;
 
-		if(!visited[v] && !in_subgraph[v]){
-			visited[g.index(v)] = true;
-			dfsBridgesVisit(g,in_subgraph,visited,bridge_edges,v);
+		if(dfs_number[g.index(u)] > dfs_number[g.index(v)])
+			bridge_edges.push_back(e);
+
+		if(dfs_number[g.index(v)]==std::numeric_limits<size_t>::max() &&
+				!in_subgraph[g.index(v)]){
+			dfs_number[g.index(v)] = dfs_count++;
+			dfsBridgesVisit(g,in_subgraph,dfs_number,dfs_count,bridge_edges,v);
 		}
 	}
 }
@@ -366,23 +369,27 @@ auto bridges(const IndexedGraph<Graph>& g, const std::vector<edge_t<Graph>>& sub
 	std::vector<bool> vertices_in_subgraph(g.numVertices(),false);
 	std::vector<bool> edges_in_subgraph(g.numEdges(),false);
 
+	std::vector<size_t> dfs_number(g.numVertices(),std::numeric_limits<size_t>::max());
+	size_t dfs_count = 1;
+
 	for(auto&& e : subgraph){
 		auto [a,b] = g.endpoints(e);
 		vertices_in_subgraph[g.index(a)]=true;
 		vertices_in_subgraph[g.index(b)]=true;
 		edges_in_subgraph[g.index(e)]=true;
+		dfs_number[g.index(a)] = dfs_count++;
+		dfs_number[g.index(b)] = dfs_count++;
 	}
 
 	//copy
-	std::vector<bool> visited = vertices_in_subgraph;
 	
 	std::vector<std::vector<edge_t<Graph>>> bridges;
 
 	for(auto&& v : g.vertices()){
-		if(!visited[v]){
+		if(dfs_number[v]==std::numeric_limits<size_t>::max()){
 			std::vector<edge_t<Graph>> bridge_edges;
-			visited[v] = true;
-			dfsBridgesVisit(g,vertices_in_subgraph,visited,bridge_edges,v);
+			dfs_number[v] = dfs_count++;
+			dfsBridgesVisit(g,vertices_in_subgraph,dfs_number,dfs_count,bridge_edges,v);
 			bridges.push_back(bridge_edges);
 		}
 	}
