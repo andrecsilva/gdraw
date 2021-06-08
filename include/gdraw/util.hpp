@@ -362,6 +362,9 @@ auto dfsBridgesVisit(const IndexedGraph<Graph>& g,
 	}
 }
 
+/**
+ * Returns a list containing all the bridges of a g. The bridges are represented as a list of edges.
+ */
 template <typename Graph>
 auto bridges(const IndexedGraph<Graph>& g, const std::vector<edge_t<Graph>>& subgraph){
 	//returns a vertex list of all the bridges of subgraph
