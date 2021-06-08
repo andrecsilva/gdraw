@@ -22,20 +22,23 @@ using namespace gdraw;
 
 auto test_dfsTree(){
 	IndexedGraph<AdjList> g = getKpq<AdjList>(4,4);
+
 	auto u = vertex(2,g.getGraph());
-	auto parent = dfsForest(g,u);
-	std::vector<vertex_t<AdjList>> solution = {
-		vertex(4,g.getGraph()),
-		vertex(5,g.getGraph()),
-		vertex(boost::graph_traits<AdjList>::null_vertex(),g.getGraph()),
-		vertex(6,g.getGraph()),
-		vertex(2,g.getGraph()),
-		vertex(0,g.getGraph()),
-		vertex(1,g.getGraph()),
-		vertex(3,g.getGraph())
+
+	auto forest = dfsForest(g,u);
+
+	std::vector<std::optional<edge_t<AdjList>>> solution = {
+		edge(0,4,g.getGraph()).first,
+		edge(1,5,g.getGraph()).first,
+		{},
+		edge(3,6,g.getGraph()).first,
+		edge(4,2,g.getGraph()).first,
+		edge(5,0,g.getGraph()).first,
+		edge(6,1,g.getGraph()).first,
+		edge(7,3,g.getGraph()).first
 	};
-	for(size_t i=0; i<parent.size();i++){
-		ASSERT(parent[i] == solution[i]);
+	for(size_t i=0; i<forest.size();i++){
+		ASSERT(forest[i] == solution[i]);
 	}
 }
 
@@ -49,19 +52,19 @@ auto test_dfsForest(){
 	add_edge(6,7,g.getGraph());
 
 	auto u = vertex(0,g.getGraph());
-	auto parent = dfsForest(g,u);
-	std::vector<vertex_t<AdjList>> solution = {
-		vertex(boost::graph_traits<AdjList>::null_vertex(),g.getGraph()),
-		vertex(0,g.getGraph()),
-		vertex(0,g.getGraph()),
-		vertex(1,g.getGraph()),
-		vertex(1,g.getGraph()),
-		vertex(boost::graph_traits<AdjList>::null_vertex(),g.getGraph()),
-		vertex(5,g.getGraph()),
-		vertex(6,g.getGraph())
+	auto forest = dfsForest(g,u);
+	std::vector<std::optional<edge_t<AdjList>>> solution = {
+		{},
+		edge(1,0,g.getGraph()).first,
+		edge(2,0,g.getGraph()).first,
+		edge(3,1,g.getGraph()).first,
+		edge(4,1,g.getGraph()).first,
+		{},
+		edge(6,5,g.getGraph()).first,
+		edge(7,6,g.getGraph()).first
 	};
-	for(size_t i=0; i<parent.size();i++){
-		ASSERT(parent[i] == solution[i]);
+	for(size_t i=0; i<forest.size();i++){
+		ASSERT(forest[i] == solution[i]);
 	}
 }
 

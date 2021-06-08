@@ -100,48 +100,74 @@ auto inline treeEdges(const auto& tree){
 }
 
 /**
- * Recursive implementation of depth-first search in a graph.
+ * Recursive implementation of depth-first search in a graph. 
+ * Returns the edges of a dfs Tree rooted at root.
  */
 template <typename Graph>
-void dfsTreeVisit(const Graph& g, const vertex_t<Graph>& u, std::vector<vertex_t<Graph>>& parent){
+void dfsTreeVisit(const IndexedGraph<Graph>& g,
+	       	const vertex_t<Graph>& u,
+		const vertex_t<Graph>& root,
+	       	std::vector<std::optional<edge_t<Graph>>>& dfs_edges
+		){
 
 	//std::cout << u << std::endl;
-	for(auto&& v : range(adjacent_vertices(u,g))){
-		if(parent[v] == boost::graph_traits<Graph>::null_vertex()){
-			parent[v]=u;
-			dfsTreeVisit(g,v,parent);
+	for(auto&& e : range(g.incidentEdges(u))){
+		auto [a,b] = g.endpoints(e);
+		auto v = a!=u ? a : b;
+		if(v!=root && !dfs_edges[g.index(v)]){
+			dfs_edges[g.index(v)]=e;
+			dfsTreeVisit(g,v,root,dfs_edges);
 		}
 	}
 }
 
 /**
- * Returns a depth-first search forest of a graph represented by a vector containing
- * the parent for each vertex.
+ * Returns a depth-first search forest of a graph represented by a vector where each position i contains the DFSForest edge of vertex i incident with its parent.
  */
 template <typename Graph>
 auto dfsForest(const IndexedGraph<Graph>& g, const vertex_t<Graph>& root){
 
-	std::vector<vertex_t<Graph>> parent(num_vertices(g.getGraph()),boost::graph_traits<Graph>::null_vertex());
-	parent[root] = root;
+	std::vector<std::optional<edge_t<Graph>>> dfs_edges(g.numVertices());
 
-	dfsTreeVisit(g.getGraph(),root,parent);
+	dfsTreeVisit(g,root,root,dfs_edges);
 
-	for(auto&& u : range(vertices(g.getGraph()))){
-		if(parent[u] == boost::graph_traits<Graph>::null_vertex()){
-			parent[u] = u;
-			dfsTreeVisit(g.getGraph(),u,parent);
-			parent[u] = boost::graph_traits<Graph>::null_vertex();
+	for(auto&& u : g.vertices()){
+		if(!dfs_edges[g.index(u)]){
+			dfsTreeVisit(g,u,u,dfs_edges);
 		}
 	}
-
-	parent[root] = boost::graph_traits<Graph>::null_vertex();
 
 	//for(auto&& p : parent)
 	//	std::cout << p << ' ';
 	//std::cout << std::endl;
 
-	return parent;
+	return dfs_edges;
 }
+
+//template <typename Graph>
+//auto dfsForest(const IndexedGraph<Graph>& g, const vertex_t<Graph>& root){
+//
+//	std::vector<vertex_t<Graph>> parent(num_vertices(g.getGraph()),boost::graph_traits<Graph>::null_vertex());
+//	parent[root] = root;
+//
+//	dfsTreeVisit(g.getGraph(),root,parent);
+//
+//	for(auto&& u : range(vertices(g.getGraph()))){
+//		if(parent[u] == boost::graph_traits<Graph>::null_vertex()){
+//			parent[u] = u;
+//			dfsTreeVisit(g.getGraph(),u,parent);
+//			parent[u] = boost::graph_traits<Graph>::null_vertex();
+//		}
+//	}
+//
+//	parent[root] = boost::graph_traits<Graph>::null_vertex();
+//
+//	//for(auto&& p : parent)
+//	//	std::cout << p << ' ';
+//	//std::cout << std::endl;
+//
+//	return parent;
+//}
 
 template <typename Graph>
 auto dfsFindCycleVisit(const IndexedGraph<Graph>& g,

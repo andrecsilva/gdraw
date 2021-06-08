@@ -286,10 +286,10 @@ auto cutAlongCycle(EmbeddedGraph<Graph>& g, const T& nc_cycle){
 
 /**
  * Changes the rotations of g until all the edges of the tree
- * (represented by a parent vector) are positive.
+ * are positive.
  */
 template <typename Graph>
-auto positiveSpanningTree(EmbeddedGraph<Graph>& g, std::vector<vertex_t<Graph>>& parent, vertex_t<Graph>& root){
+auto positiveSpanningTree(EmbeddedGraph<Graph>& g, std::vector<std::optional<edge_t<Graph>>>& spanning_tree, vertex_t<Graph>& root){
 
 	//auto root = *(vertices(g.getGraph()));
 	//auto parent = dfsForest(g,root);
@@ -310,7 +310,7 @@ auto positiveSpanningTree(EmbeddedGraph<Graph>& g, std::vector<vertex_t<Graph>>&
 
 		for(auto&& e : range(out_edges(u,g.getGraph()))){
 			auto v = find_other_endpoint(e,u);
-			if(parent[v] == u){
+			if(spanning_tree[v] == e){
 				queue.push_back(v);
 				if(g.signal(e) == -1){
 					std::reverse(g.rotations[v].begin(),g.rotations[v].end());
@@ -331,9 +331,9 @@ auto positiveSpanningTree(EmbeddedGraph<Graph>& g, std::vector<vertex_t<Graph>>&
 template <typename Graph>
 auto isOrientable(EmbeddedGraph<Graph>& g) -> bool{
 	auto root = *(vertices(g.getGraph()).first);
-	auto parent = dfsForest(g,root);
+	auto spanning_tree = dfsForest(g,root);
 
-	positiveSpanningTree(g,parent,root);
+	positiveSpanningTree(g,spanning_tree,root);
 
 	for(auto&& e : range(edges(g.getGraph()))){
 		if(g.signal(e) == -1)
