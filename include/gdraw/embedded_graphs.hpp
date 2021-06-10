@@ -344,6 +344,73 @@ auto isOrientable(EmbeddedGraph<Graph>& g) -> bool{
 }
 
 /**
+ * Returns the facial walk of the face incident with  the u->v side of the edge e.
+ */
+template <typename Graph>
+auto facialWalk(const EmbeddedGraph<Graph>& g, const edge_t<Graph>& e, const vertex_t<Graph>& u){
+
+	std::vector<std::vector<edge_t<Graph>>> next_edge(g.numEdges(),std::vector<edge_t<Graph>>(2));
+
+
+	for(auto&& u : g.vertices()){
+		//std::cout << u << std::endl;
+		for(size_t i=0; i<g.rotations[g.index(u)].size();i++){
+			auto e = g.rotations[g.index(u)][i];
+			auto next = g.rotations[g.index(u)][(i+1)%g.rotations[g.index(u)].size()];
+			//std::cout << e << ' ' << next << std::endl;;
+
+			auto [a,b] = g.endpoints(e);
+			auto v = a!=u ? a : b;
+
+			if(g.index(u) <= g.index(v))
+				next_edge[g.index(e)][0] = next;
+			else
+				next_edge[g.index(e)][1] = next;
+		}
+	}
+
+	auto next_in_rotation = [&g,&next_edge](auto u,auto e){
+		auto [a,b] = g.endpoints(e);
+		auto v = a!=u ? a : b;
+
+		if(g.index(u) <= g.index(v))
+			return next_edge[g.index(e)][0];
+		return next_edge[g.index(e)][1];
+	};
+
+//	printEmbedding(g);
+//
+//	for(auto&& e : g.edges()){
+//		auto [a,b] = g.endpoints(e);
+//		if(a>b){
+//			auto temp = a;
+//			a = b;
+//			b = temp;
+//		}
+//
+//		std::cout << e << ' ' << next_in_rotation(a,e) << ' ' << next_in_rotation(b,e) << std::endl;
+//	}
+
+
+	//printEmbedding(g);
+	std::vector<edge_t<Graph>> facial_walk;
+
+	auto f = e;
+	auto v = u;
+
+	do{
+		//std::cout << f << ' ' <<  v << std::endl;
+		facial_walk.push_back(f);
+		auto [a,b] = g.endpoints(f);
+		v = a!=v ? a : b;
+		f = next_in_rotation(v,f);
+	}while(f!=e || v!=u);
+	//std::cout << f << ' ' <<  v << std::endl;
+
+	return facial_walk;
+}
+
+/**
  * Returns the Euler genus of the graph.
  */
 template <typename Graph>

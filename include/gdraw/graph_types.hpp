@@ -42,6 +42,11 @@ namespace detail{
 		return vertices(g);
 	}
 
+	template <typename Graph>
+	inline auto boost_edge(Graph& g,vertex_t<Graph> u, vertex_t<Graph> v){
+		return edge(u,v,g);
+	}
+
 }
 
 /**
@@ -258,6 +263,13 @@ class IndexedGraph : public GraphWrapper<Graph>{
 		inline auto endpoints(edge_t<Graph> e) const{
 			return std::make_tuple(source(e,this->getGraph()),target(e,this->getGraph()));
 		}
+
+		inline auto edge(vertex_t<Graph> u, vertex_t<Graph> v) -> std::optional<edge_t<Graph>>{
+			auto e = detail::boost_edge(this->getGraph(),u,v);
+			if(e.second)
+				return e.first;
+			return {};
+		}
 		
 		inline static auto nullVertex(){
 			return boost::graph_traits<Graph>::null_vertex();
@@ -408,6 +420,7 @@ class PureEmbeddedGraph : public IndexedGraph<Graph>{
 			(*this) = PureEmbeddedGraph(other);
 			return *this;
 		}
+
 };
 
 /*

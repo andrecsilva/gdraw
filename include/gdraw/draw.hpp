@@ -63,8 +63,8 @@ auto not_in_cycle(const IndexedGraph<Graph>& g, const std::vector<vertex_t<Graph
 }
 
 /** Draws a graph according to Tutte's algorithm in 
- * "How to draw a graph". Returns a vector containing
- * containing the coordinates of g's vertices.
+ *  "How to draw a graph". Returns a vector containing
+ *  the coordinates of g's vertices.
  */
 template <typename Graph>
 auto tutteDrawImpl(IndexedGraph<Graph>& g,
