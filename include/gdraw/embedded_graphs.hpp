@@ -350,6 +350,8 @@ template <typename Graph>
 auto facialWalk(const EmbeddedGraph<Graph>& g, const edge_t<Graph>& e, const vertex_t<Graph>& u){
 
 	std::vector<std::vector<edge_t<Graph>>> next_edge(g.numEdges(),std::vector<edge_t<Graph>>(2));
+	std::vector<std::vector<edge_t<Graph>>> prev_edge(g.numEdges(),std::vector<edge_t<Graph>>(2));
+
 
 
 	for(auto&& u : g.vertices()){
@@ -357,6 +359,7 @@ auto facialWalk(const EmbeddedGraph<Graph>& g, const edge_t<Graph>& e, const ver
 		for(size_t i=0; i<g.rotations[g.index(u)].size();i++){
 			auto e = g.rotations[g.index(u)][i];
 			auto next = g.rotations[g.index(u)][(i+1)%g.rotations[g.index(u)].size()];
+			auto prev = g.rotations[g.index(u)][(i-1)%g.rotations[g.index(u)].size()];
 			//std::cout << e << ' ' << next << std::endl;;
 
 			auto [a,b] = g.endpoints(e);
@@ -366,16 +369,29 @@ auto facialWalk(const EmbeddedGraph<Graph>& g, const edge_t<Graph>& e, const ver
 				next_edge[g.index(e)][0] = next;
 			else
 				next_edge[g.index(e)][1] = next;
+
+			if(g.index(u) <= g.index(v))
+				prev_edge[g.index(e)][0] = prev;
+			else
+				prev_edge[g.index(e)][1] = prev;
 		}
 	}
 
-	auto next_in_rotation = [&g,&next_edge](auto u,auto e){
+	auto next_in_rotation = [&g,&next_edge,&prev_edge](auto u,auto e,auto positive_signal){
 		auto [a,b] = g.endpoints(e);
 		auto v = a!=u ? a : b;
 
-		if(g.index(u) <= g.index(v))
-			return next_edge[g.index(e)][0];
-		return next_edge[g.index(e)][1];
+		if(positive_signal){
+			if(g.index(u) <= g.index(v))
+				return next_edge[g.index(e)][0];
+			return next_edge[g.index(e)][1];
+		}
+		else{
+			if(g.index(u) <= g.index(v))
+				return prev_edge[g.index(e)][0];
+			return prev_edge[g.index(e)][1];
+		}
+
 	};
 
 //	printEmbedding(g);
@@ -395,6 +411,7 @@ auto facialWalk(const EmbeddedGraph<Graph>& g, const edge_t<Graph>& e, const ver
 	//printEmbedding(g);
 	std::vector<edge_t<Graph>> facial_walk;
 
+	auto positive_signal = true;
 	auto f = e;
 	auto v = u;
 
@@ -403,8 +420,10 @@ auto facialWalk(const EmbeddedGraph<Graph>& g, const edge_t<Graph>& e, const ver
 		facial_walk.push_back(f);
 		auto [a,b] = g.endpoints(f);
 		v = a!=v ? a : b;
-		f = next_in_rotation(v,f);
-	}while(f!=e || v!=u);
+		if(g.signal(f)==-1)
+			positive_signal = !positive_signal;
+		f = next_in_rotation(v,f,positive_signal);
+	}while(f!=e || v!=u || !positive_signal);
 	//std::cout << f << ' ' <<  v << std::endl;
 
 	return facial_walk;
