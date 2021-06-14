@@ -52,7 +52,7 @@ auto test_smalles1sidescycle(){
 
 }
 
-auto test_face_traversal(){
+auto test_allFacialWalks(){
 	auto g = IndexedGraph{genCycle<AdjList>(5)};
 
 	g.addEdge(5,0);
@@ -61,11 +61,19 @@ auto test_face_traversal(){
 
 	auto pg = std::get<PlanarGraph<AdjList>>(planeEmbedding(std::move(g)));
 
-	auto walk = facialWalk(pg, pg.edge(0,1).value(),0);
-	auto walk2 = facialWalk(pg, pg.edge(0,1).value(),1);
+	auto all_walks = allFacialWalks(pg);
 
-	ASSERT(walk.size()==7);
-	ASSERT(walk2.size()==5);
+	//for(auto&& w : all_walks){
+	//	for(auto&& e : w)
+	//		std::cout << e << ' ';
+	//	std::cout << std::endl;
+	//}
+
+	ASSERT(all_walks.size() ==2);
+	ASSERT(all_walks[0].size() ==7);
+	ASSERT(all_walks[1].size() ==5);
+
+
 	//for(auto&& e : walk)
 	//	std::cout << e << ' ';
 	//std::cout << std::endl;
@@ -76,7 +84,7 @@ auto test_face_traversal(){
 	
 }
 
-auto test_face_traversal2(){
+auto test_allFacialWalks2(){
 	//One-sided cycle
 	auto g = IndexedGraph{genCycle<AdjList>(5)};
 
@@ -86,13 +94,14 @@ auto test_face_traversal2(){
 
 	pg.edge_signals[pg.index(pg.edge(0,4).value())] = -1;
 
-	auto walk = facialWalk(pg, pg.edge(0,1).value(),0);
+	auto all_walks = allFacialWalks(pg);
 
 	//for(auto&& e : walk)
 	//	std::cout << e << ' ';
 	//std::cout << std::endl;
 	
-	ASSERT(walk.size()==10);
+	ASSERT(all_walks.size()==1);
+	ASSERT(all_walks[0].size()==10);
 
 }
 
@@ -101,6 +110,6 @@ int main(){
 	std::cout << "Testing : " << __FILE__ << std::endl;
 
 	test_smalles1sidescycle();
-	test_face_traversal();
-	test_face_traversal2();
+	test_allFacialWalks();
+	test_allFacialWalks2();
 }

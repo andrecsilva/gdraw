@@ -347,8 +347,98 @@ auto isOrientable(EmbeddedGraph<Graph>& g) -> bool{
  * Returns the facial walk of the face incident with  the u->v side of the edge e.
  */
 template <typename Graph>
-auto facialWalk(const EmbeddedGraph<Graph>& g, const edge_t<Graph>& e, const vertex_t<Graph>& u){
+auto facialWalk(const EmbeddedGraph<Graph>& g,
+	       	const edge_t<Graph>& e,
+	       	const vertex_t<Graph>& u,
+	       	const std::vector<std::vector<edge_t<Graph>>>& next_edge,
+	       	const std::vector<std::vector<edge_t<Graph>>>& prev_edge,
+	       	std::vector<std::vector<bool>>& visited
+		){
 
+	//std::cout << e << ' ' << u << std::endl;
+
+	auto next_in_rotation = [&g,&next_edge,&prev_edge](auto u,auto e,auto positive_signal){
+		auto [a,b] = g.endpoints(e);
+		auto v = a!=u ? a : b;
+
+		if(positive_signal){
+			if(g.index(u) <= g.index(v))
+				return next_edge[g.index(e)][0];
+			return next_edge[g.index(e)][1];
+		}
+		else{
+			if(g.index(u) <= g.index(v))
+				return prev_edge[g.index(e)][0];
+			return prev_edge[g.index(e)][1];
+		}
+
+	};
+
+	auto mark_visited = [&g,&visited](auto u,auto e,auto positive_signal){
+		auto [a,b] = g.endpoints(e);
+		auto v = a!=u ? a : b;
+
+		if(positive_signal){
+			if(g.index(u) <= g.index(v))
+				visited[g.index(e)][0] = true;
+			else
+				visited[g.index(e)][1] = true;
+		}
+		else{
+			if(g.index(u) <= g.index(v))
+				visited[g.index(e)][1] = true;
+			else
+				visited[g.index(e)][0] = true;
+		}
+	};
+
+
+
+//	printEmbedding(g);
+//
+//	for(auto&& e : g.edges()){
+//		auto [a,b] = g.endpoints(e);
+//		if(a>b){
+//			auto temp = a;
+//			a = b;
+//			b = temp;
+//		}
+//
+//		std::cout << e << ' ' << next_in_rotation(a,e) << ' ' << next_in_rotation(b,e) << std::endl;
+//	}
+
+
+	//printEmbedding(g);
+	std::vector<edge_t<Graph>> facial_walk;
+
+	auto positive_signal = true;
+	auto f = e;
+	auto v = u;
+
+	do{
+		//std::cout << f << ' ' <<  v << std::endl;
+		facial_walk.push_back(f);
+		mark_visited(v,f,positive_signal);
+
+		auto [a,b] = g.endpoints(f);
+		v = a!=v ? a : b;
+		if(g.signal(f)==-1)
+			positive_signal = !positive_signal;
+		f = next_in_rotation(v,f,positive_signal);
+	}while(f!=e || v!=u || !positive_signal);
+	//std::cout << f << ' ' <<  v << std::endl;
+
+	return facial_walk;
+}
+
+
+/**
+ * Returns all the possible facial walks for an embedded graph g.
+ */
+template <typename Graph>
+auto allFacialWalks(const EmbeddedGraph<Graph>& g){
+	
+	//These are the pi_v(e) and its inverse.
 	std::vector<std::vector<edge_t<Graph>>> next_edge(g.numEdges(),std::vector<edge_t<Graph>>(2));
 	std::vector<std::vector<edge_t<Graph>>> prev_edge(g.numEdges(),std::vector<edge_t<Graph>>(2));
 
@@ -377,56 +467,26 @@ auto facialWalk(const EmbeddedGraph<Graph>& g, const edge_t<Graph>& e, const ver
 		}
 	}
 
-	auto next_in_rotation = [&g,&next_edge,&prev_edge](auto u,auto e,auto positive_signal){
-		auto [a,b] = g.endpoints(e);
-		auto v = a!=u ? a : b;
+	std::vector<std::vector<bool>> visited(g.numEdges(),std::vector<bool>(2,false));
+	std::vector<std::vector<edge_t<Graph>>> facial_walks;
 
-		if(positive_signal){
-			if(g.index(u) <= g.index(v))
-				return next_edge[g.index(e)][0];
-			return next_edge[g.index(e)][1];
-		}
-		else{
-			if(g.index(u) <= g.index(v))
-				return prev_edge[g.index(e)][0];
-			return prev_edge[g.index(e)][1];
+	for(auto&& e : g.edges()){
+		auto [u,v] = g.endpoints(e);
+		if(g.index(v) < g.index(u)){
+			auto temp = v;
+			v = u;
+			u = temp;
 		}
 
-	};
+		if(!visited[g.index(e)][0])
+			facial_walks.push_back(facialWalk(g,e,u,next_edge,prev_edge,visited));
 
-//	printEmbedding(g);
-//
-//	for(auto&& e : g.edges()){
-//		auto [a,b] = g.endpoints(e);
-//		if(a>b){
-//			auto temp = a;
-//			a = b;
-//			b = temp;
-//		}
-//
-//		std::cout << e << ' ' << next_in_rotation(a,e) << ' ' << next_in_rotation(b,e) << std::endl;
-//	}
+		if(!visited[g.index(e)][1])
+			facial_walks.push_back(facialWalk(g,e,v,next_edge,prev_edge,visited));
+	}
 
+	return facial_walks;
 
-	//printEmbedding(g);
-	std::vector<edge_t<Graph>> facial_walk;
-
-	auto positive_signal = true;
-	auto f = e;
-	auto v = u;
-
-	do{
-		//std::cout << f << ' ' <<  v << std::endl;
-		facial_walk.push_back(f);
-		auto [a,b] = g.endpoints(f);
-		v = a!=v ? a : b;
-		if(g.signal(f)==-1)
-			positive_signal = !positive_signal;
-		f = next_in_rotation(v,f,positive_signal);
-	}while(f!=e || v!=u || !positive_signal);
-	//std::cout << f << ' ' <<  v << std::endl;
-
-	return facial_walk;
 }
 
 /**
