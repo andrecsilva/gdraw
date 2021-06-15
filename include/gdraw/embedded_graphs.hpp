@@ -375,6 +375,7 @@ auto facialWalk(const EmbeddedGraph<Graph>& g,
 	};
 
 	auto mark_visited = [&g,&visited](auto u,auto e,auto positive_signal){
+		//std::cout << "m: " << e << ' ' << u << ' ' << (positive_signal?'+':'-') << std::endl;
 		auto [a,b] = g.endpoints(e);
 		auto v = a!=u ? a : b;
 
@@ -392,41 +393,27 @@ auto facialWalk(const EmbeddedGraph<Graph>& g,
 		}
 	};
 
-
-
-//	printEmbedding(g);
-//
-//	for(auto&& e : g.edges()){
-//		auto [a,b] = g.endpoints(e);
-//		if(a>b){
-//			auto temp = a;
-//			a = b;
-//			b = temp;
-//		}
-//
-//		std::cout << e << ' ' << next_in_rotation(a,e) << ' ' << next_in_rotation(b,e) << std::endl;
-//	}
-
-
-	//printEmbedding(g);
 	std::vector<edge_t<Graph>> facial_walk;
 
 	auto positive_signal = true;
 	auto f = e;
-	auto v = u;
-
-	do{
-		//std::cout << f << ' ' <<  v << std::endl;
+	auto v = u; do{
 		facial_walk.push_back(f);
+		if(g.signal(f)==-1)
+			positive_signal = !positive_signal;
+
+		//std::cout << f << ' ' <<  v << ' ' << std::boolalpha << (positive_signal?'+':'-') << std::endl;
 		mark_visited(v,f,positive_signal);
 
 		auto [a,b] = g.endpoints(f);
 		v = a!=v ? a : b;
-		if(g.signal(f)==-1)
-			positive_signal = !positive_signal;
 		f = next_in_rotation(v,f,positive_signal);
 	}while(f!=e || v!=u || !positive_signal);
 	//std::cout << f << ' ' <<  v << std::endl;
+	
+//	for(auto&& e : g.edges()){
+//		std::cout << e << ' '  << visited[g.index(e)][0] << ' ' << visited[g.index(e)][1] << std::endl;
+//	}
 
 	return facial_walk;
 }
@@ -449,8 +436,8 @@ auto allFacialWalks(const EmbeddedGraph<Graph>& g){
 		for(size_t i=0; i<g.rotations[g.index(u)].size();i++){
 			auto e = g.rotations[g.index(u)][i];
 			auto next = g.rotations[g.index(u)][(i+1)%g.rotations[g.index(u)].size()];
-			auto prev = g.rotations[g.index(u)][(i-1)%g.rotations[g.index(u)].size()];
-			//std::cout << e << ' ' << next << std::endl;;
+			auto prev = g.rotations[g.index(u)][i==0?g.rotations[g.index(u)].size()-1 : (i-1)];
+			//std::cout << e << ' ' << next << ' ' << prev << std::endl;;
 
 			auto [a,b] = g.endpoints(e);
 			auto v = a!=u ? a : b;
@@ -466,6 +453,14 @@ auto allFacialWalks(const EmbeddedGraph<Graph>& g){
 				prev_edge[g.index(e)][1] = prev;
 		}
 	}
+
+	//printGraph(g);
+	//printEmbedding(g);
+	//for(auto&& e : g.edges()){
+	//	std::cout << e << std::endl;
+	//	std::cout << prev_edge[g.index(e)][0] << ' ' << prev_edge[g.index(e)][1] << std::endl;
+	//	std::cout << next_edge[g.index(e)][0] << ' ' << next_edge[g.index(e)][1] << std::endl;
+	//}
 
 	std::vector<std::vector<bool>> visited(g.numEdges(),std::vector<bool>(2,false));
 	std::vector<std::vector<edge_t<Graph>>> facial_walks;
