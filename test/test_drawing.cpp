@@ -8,6 +8,8 @@
 #include <gdraw/generators.hpp>
 #include <gdraw/draw.hpp>
 
+#include <gdraw/io.hpp>
+
 #define ASSERT(x) { if (!(x)) std::cout << __FUNCTION__ << " failed on line " << __LINE__ << std::endl; }
 
 using AdjList = boost::adjacency_list<
@@ -19,48 +21,6 @@ using AdjList = boost::adjacency_list<
 	>; 
 
 using namespace gdraw;
-
-auto test_build_system(){
-	auto g = GraphWrapper{AdjList(5)};
-
-	add_edge(0,1,g.getGraph());
-	add_edge(0,2,g.getGraph());
-	add_edge(0,3,g.getGraph());
-	add_edge(1,2,g.getGraph());
-	add_edge(1,3,g.getGraph());
-	add_edge(1,4,g.getGraph());
-	add_edge(2,3,g.getGraph());
-	add_edge(2,4,g.getGraph());
-	add_edge(3,4,g.getGraph());
-
-	std::vector<vertex_t<AdjList>> facial_cycle = {0,1,2};
-
-	std::vector<std::pair<vertex_t<AdjList>,coord_t>> drawn_cycle;
-	drawn_cycle = {
-		{0,{3,6}},
-		{2,{4,1}},
-		{1,{0,3}}
-	};
-
-	std::vector<bool> in_cycle(num_vertices(g.getGraph()),false);
-
-	in_cycle[0] = true;
-	in_cycle[1] = true;
-	in_cycle[2] = true;
-
-	auto [A,bx,by,vertex_to_row] = buildSystem(g.getGraph(),drawn_cycle);
-
-	ASSERT(A(0,0) ==4);
-	ASSERT(A(0,1) ==-1);
-	ASSERT(A(1,0) ==-1);
-	ASSERT(A(1,1) ==3);
-
-	ASSERT(bx(0) = 7);
-	ASSERT(bx(1) = 4);
-
-	ASSERT(by(0) = 10);
-	ASSERT(by(1) = 4);
-}
 
 auto test_laplacian(){
 	auto g = IndexedGraph<AdjList>{getKpq<AdjList>(4,4)};
@@ -84,7 +44,7 @@ auto test_tuttedrawing1(){
 	auto L = laplacian(g);
 	
 	std::vector<vertex_t<AdjList>> cycle {0,2,1,3};
-	std::vector<coord_t> cycle_coordinates = {{0,-3},{0,3},{3,0},{-3,0}};
+	std::vector<coord_t> cycle_coordinates = {{0,-2},{2,0},{0,2},{-2,0}};
 
 	auto coordinates = tutteDrawImpl(g,cycle,cycle_coordinates);
 
@@ -114,8 +74,6 @@ auto test_sldrawing(){
 	ASSERT(isStraightLineDrawing(dg));
 }
 
-
-
 auto test_cpdrawing(){
 
 	auto g = IndexedGraph{genCycle<AdjList>(5)};
@@ -131,6 +89,58 @@ auto test_cpdrawing(){
 	ASSERT(is_straight_line_drawing(dg.getGraph(),coordinates_pmap));
 }
 
+auto test_tuttedrawing2(){
+	auto g = IndexedGraph{AdjList(6)};
+
+	//add_edge(0,1,g.getGraph());
+	//
+	g.addEdge(0,5);
+
+	//add_edge(0,3,g.getGraph());
+	//
+	g.addEdge(1,2);
+	g.addEdge(1,5);
+
+	//add_edge(2,3,g.getGraph());
+	//
+	g.addEdge(2,4);
+	g.addEdge(3,4);
+	g.addEdge(4,5);
+
+	g.addEdge(6,1);
+	g.addEdge(6,0);
+	g.addEdge(6,5);
+
+	g.addEdge(7,2);
+	g.addEdge(7,3);
+	g.addEdge(7,4);
+
+	g.addEdge(8,0);
+	g.addEdge(8,5);
+	g.addEdge(8,9);
+
+	g.addEdge(9,3);
+	g.addEdge(9,4);
+
+	g.addEdge(2,5);
+
+	//std::vector<vertex_t<AdjList>> cycle {0,5,6};
+	//std::vector<coord_t> cycle_coordinates = {{-3,-2},{3,-2},{0,3}};
+
+	//auto coordinates = tutteDrawImpl(g,cycle,cycle_coordinates);
+
+	//auto dg = DrawnGraph<AdjList>(std::move(g),std::move(coordinates));
+	auto pg = std::get<PlanarGraph<AdjList>>(planeEmbedding(g));
+	auto dg = tuttePlanarDraw(std::move(pg));
+	
+	//auto coordinates_pmap = make_iterator_property_map(coordinates.begin(),get(boost::vertex_index,g.getGraph()));
+	//writeDOT(dg);
+	//ASSERT(isStraightLineDrawing(dg));
+	ASSERT(isStraightLineDrawing(dg));
+	//ASSERT(is_straight_line_drawing(g.getGraph(),coordinates_pmap));
+
+}
+
 int main(){
 	std::cout << "Testing : " << __FILE__ << std::endl;
 
@@ -139,6 +149,5 @@ int main(){
 	test_sldrawing();
 	test_intersect();
 	test_tuttedrawing1();
-	//test_build_system();
-
+	test_tuttedrawing2();
 }

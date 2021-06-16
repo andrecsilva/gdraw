@@ -409,12 +409,21 @@ auto isStraightLineDrawing(const DrawnGraph<Graph>& g) -> bool{
 				g.coordinates[g.index(u_f)],
 				g.coordinates[g.index(v_f)]);
 	};
+
+	auto common_endpoint = [&g](auto e, auto f){
+		auto [a,b] = g.endpoints(e);
+		auto [x,y] = g.endpoints(f);
+		return (x==a || x==b || y==a || y==b);
+	};
+
 	for(auto&& c : iter::combinations(g.edges(),2)){
 		auto e = *(c.begin());
 		auto f = *(c.begin()+1);
 		//std::cout << e << ' ' << f << ' ' << std::boolalpha << cross(e,f) << std::endl;
-		if(cross(e,f))
+		if(!common_endpoint(e,f) && cross(e,f)){
+			//std::cout << e << 'x' << f << std::endl;
 			return false;
+		}
 	}
 
 	return true;
