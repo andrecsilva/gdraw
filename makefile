@@ -24,7 +24,7 @@ $(SRC:%.cpp=%): % : %.cpp
 -include $(SRC:%.cpp=%.d)
 
 $(TEST:%.cpp=%): % : %.cpp
-	$(CXX) $(CXXFLAGS) -p -g -o $@.test $<
+	$(CXX) $(CXXFLAGS) -p -g -o $@.test $< && ./$@.test
 
 -include $(TEST:%.cpp=%.d)
 
@@ -38,13 +38,10 @@ test_all: $(TEST:%.cpp=%)
 
 .PHONY: clean
 .PHONY: quick_test
-.PHONY: run_unit_test
 
 quick_test: test
 	./quick_test
 
-run_unit_test: unit_test
-	./unit_test
-
 clean: 
 	$(RM) *.o *.d
+	$(RM) test/*.test test/*.d
