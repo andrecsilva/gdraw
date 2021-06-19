@@ -154,6 +154,11 @@ class GraphWrapper{
 
 };
 
+/**
+ * A wrapper around a boost graph with indexes as an internal property for both edges
+ * and vertices. The methods of this class will take care of the indexing of the edges
+ * for you.
+ */
 template <typename Graph>
 class IndexedGraph : public GraphWrapper<Graph>{
 	public:
