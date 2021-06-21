@@ -34,7 +34,7 @@ test: test.cpp
 #$(info "$(TEST)")
 
 test_all: $(TEST:%.cpp=%)
-	for t in test/test_*.test; do ./$$t; done
+	
 
 .PHONY: clean
 .PHONY: quick_test

@@ -93,26 +93,10 @@ auto test_maximal(){
 	ASSERT(num_edges(pg.getGraph()) == 3*(n+1) - 6);
 }
 
-
-auto test_planarXNumber()
-{
-	auto g = IndexedGraph<AdjList>{gdraw::getKpq<AdjList>(3,4)};
-	auto h = IndexedGraph<AdjList>{gdraw::getKpq<AdjList>(3,3)};
-	auto k = IndexedGraph<AdjList>{gdraw::getKn<AdjList>(6)};
-	auto l = IndexedGraph<AdjList>{gdraw::getKn<AdjList>(4)};
-
-	ASSERT(!planarXNumber(std::move(g),1));
-	ASSERT(planarXNumber(std::move(h),2));
-	ASSERT(planarXNumber(std::move(k),3));
-	ASSERT(planarXNumber(std::move(l),1));
-}
-
 int main(){
 	std::cout << "Testing : " << __FILE__ << std::endl;
 
 	test_isPlanar();
 	test_maximal();
 	test_largestfacialcycle();
-
-	test_planarXNumber();
 }
