@@ -15,7 +15,6 @@
 
 namespace gdraw{
 
-
 //TODO maybe use parallel for each? : std::for_each(std::execution::par_unseq,...
 /*
  * Executes `execute` for each subset of collection with size between `min_size` and `max_size` until it returns `true`.
@@ -143,31 +142,6 @@ auto dfsForest(const IndexedGraph<Graph>& g, const vertex_t<Graph>& root){
 
 	return dfs_edges;
 }
-
-//template <typename Graph>
-//auto dfsForest(const IndexedGraph<Graph>& g, const vertex_t<Graph>& root){
-//
-//	std::vector<vertex_t<Graph>> parent(num_vertices(g.getGraph()),boost::graph_traits<Graph>::null_vertex());
-//	parent[root] = root;
-//
-//	dfsTreeVisit(g.getGraph(),root,parent);
-//
-//	for(auto&& u : range(vertices(g.getGraph()))){
-//		if(parent[u] == boost::graph_traits<Graph>::null_vertex()){
-//			parent[u] = u;
-//			dfsTreeVisit(g.getGraph(),u,parent);
-//			parent[u] = boost::graph_traits<Graph>::null_vertex();
-//		}
-//	}
-//
-//	parent[root] = boost::graph_traits<Graph>::null_vertex();
-//
-//	//for(auto&& p : parent)
-//	//	std::cout << p << ' ';
-//	//std::cout << std::endl;
-//
-//	return parent;
-//}
 
 template <typename Graph>
 auto dfsFindCycleVisit(const IndexedGraph<Graph>& g,
@@ -465,9 +439,9 @@ std::vector<edge_t<Graph>> randomSpanningTree(const Wrapper<Graph>& g){
  * 
  * @param g: A GraphWrapper
  */
-template<template<typename> typename Wrapper,typename Graph,typename Range>
-requires AsGraphWrapper<Wrapper,Graph> && EdgeRange<Range,Graph>
-std::vector<edge_t<Graph>> coSubgraphEdges(const Wrapper<Graph>& g, const Range& subgraph_edges){
+template<typename Graph,typename T>
+requires std::ranges::common_range<T>
+auto coSubgraphEdges(const GraphWrapper<Graph>& g, T&& subgraph_edges){
 	std::vector<edge_t<Graph>> cs_edges;
 
 	auto edgei_map = get(boost::edge_index,g.getGraph());
@@ -475,7 +449,7 @@ std::vector<edge_t<Graph>> coSubgraphEdges(const Wrapper<Graph>& g, const Range&
 	std::vector<bool> in_subgraph (num_edges(g.getGraph()),false);
 	auto in_subgraph_map = make_iterator_property_map(in_subgraph.begin(), edgei_map);
 
-	for(auto& e : subgraph_edges){
+	for(auto&& e : subgraph_edges){
 		put(in_subgraph_map,e,true);
 	}
 
