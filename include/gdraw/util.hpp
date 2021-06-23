@@ -463,6 +463,47 @@ auto coSubgraphEdges(const GraphWrapper<Graph>& g, T&& subgraph_edges){
 	return cs_edges;
 }
 
+template <typename Graph,typename T>
+requires EdgeRange<T,Graph>
+auto createSubgraph(IndexedGraph<Graph>& g, T&& edge_list){
+
+	std::vector<std::optional<vertex_t<Graph>>> vertex_map(g.numVertices());
+
+	//An edge map from subg to g
+	std::vector<edge_t<Graph>> iedge_map;
+
+	IndexedGraph<Graph> subg{Graph()};
+
+	for(auto&& e: edge_list){
+		auto [a,b] = g.endpoints(e);
+
+		if(!vertex_map[g.index(a)])
+			vertex_map[g.index(a)] = subg.addVertex();
+		if(!vertex_map[g.index(b)])
+			vertex_map[g.index(b)] = subg.addVertex();
+
+		auto x = vertex_map[g.index(a)].value();
+		auto y = vertex_map[g.index(b)].value();
+
+		vertex_map[g.index(a)] = x;
+		vertex_map[g.index(b)] = y;
+
+		iedge_map.push_back(subg.addEdge(x,y));
+	}
+	std::vector<vertex_t<Graph>> ivertex_map(subg.numVertices());
+
+	for(size_t i=0; i< vertex_map.size(); i++){
+		if(vertex_map[i]){
+			auto v = vertex_map[i].value();
+			ivertex_map[subg.index(v)] = g.vertex(i);
+		}
+	}
+
+	return IndexedSubgraph(std::move(subg),
+			std::move(ivertex_map),
+			std::move(iedge_map));
+}
+
 /*
  * Removes vertices of `g` with no edges.
  */

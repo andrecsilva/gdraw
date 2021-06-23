@@ -23,7 +23,7 @@ template <typename Graph>
 using rotations_t = typename std::vector< std::vector< edge_t<Graph> > >;
 
 template <typename T,typename Graph>
-concept EdgeRange = std::ranges::range<T> && std::is_same<std::remove_cvref_t<std::ranges::range_reference_t<T>>,edge_t<Graph>>::value;
+concept EdgeRange = std::ranges::common_range<T> && std::is_same<std::remove_cvref_t<std::ranges::range_reference_t<T>>,edge_t<Graph>>::value;
 
 template <typename T,typename Graph>
 concept VertexRange = std::ranges::range<T> && std::is_same<std::remove_cvref_t<std::ranges::range_reference_t<T>>,vertex_t<Graph>>::value;
@@ -45,6 +45,11 @@ namespace detail{
 	template <typename Graph>
 	inline auto boost_edge(Graph& g,vertex_t<Graph> u, vertex_t<Graph> v){
 		return edge(u,v,g);
+	}
+
+	template <typename Graph>
+	inline auto boost_vertex(Graph& g,size_t n){
+		return vertex(n,g);
 	}
 
 }
@@ -230,6 +235,10 @@ class IndexedGraph : public GraphWrapper<Graph>{
 			return e;
 		}
 
+		auto addVertex() -> vertex_t<Graph>{
+			return add_vertex(this->getGraph());
+		}
+
 		//auto remove_edge(edge_t<Graph> e){
 		//	auto e_index = g.index(e);
 		//	auto f = edges_by_index[ecount-1];
@@ -274,6 +283,10 @@ class IndexedGraph : public GraphWrapper<Graph>{
 			if(e.second)
 				return e.first;
 			return {};
+		}
+
+		inline auto vertex(size_t n) -> vertex_t<Graph>{
+			return detail::boost_vertex(this->getGraph(),n);
 		}
 		
 		inline static auto nullVertex(){
@@ -348,6 +361,36 @@ class EdgeList{
 		}
 
 };
+
+/**
+ * An IndexedGraph with maps from its vertices and edges to the descriptors
+ * of its supergraph.
+ */
+template <typename Graph>
+class IndexedSubgraph: public IndexedGraph<Graph>{
+
+	public:
+		std::vector<vertex_t<Graph>> ivertex_map;
+		std::vector<edge_t<Graph>> iedge_map;
+
+		IndexedSubgraph(IndexedGraph<Graph> g,
+				std::vector<vertex_t<Graph>> ivertex_map,
+				std::vector<edge_t<Graph>> iedge_map):
+			IndexedGraph<Graph>{std::move(g)},
+			ivertex_map{std::move(ivertex_map)},
+			iedge_map{std::move(iedge_map)}{}
+		
+
+		inline auto map(edge_t<Graph> e) -> edge_t<Graph>{
+			return iedge_map[this->index(e)];
+		}
+
+		inline auto map(vertex_t<Graph> v) -> vertex_t<Graph>{
+			return ivertex_map[this->index(v)];
+		}
+
+};
+
 
 
 template <template <typename> typename T,typename Graph>
