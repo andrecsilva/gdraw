@@ -104,6 +104,9 @@ auto test_positivetree_2(){
 }
 
 int main(){
+
+	std::cout << "Testing : " << __FILE__ << std::endl;
+
 	test_positivetree_1();
 	test_positivetree_2();
 	test_cut_1_sided_cycle();
