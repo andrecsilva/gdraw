@@ -235,6 +235,10 @@ class IndexedGraph : public GraphWrapper<Graph>{
 			return e;
 		}
 
+		auto removeEdge(edge_t<Graph> e) -> void{ 
+			remove_edge(e,this->getGraph());
+		}
+
 		auto addVertex() -> vertex_t<Graph>{
 			return add_vertex(this->getGraph());
 		}

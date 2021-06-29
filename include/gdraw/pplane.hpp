@@ -265,5 +265,122 @@ auto embeddingFromDPC(PlanarGraph<Graph> g) -> ProjectivePlanarGraph<Graph>{
 	return ProjectivePlanarGraph<Graph>{std::move(h),std::move(h_rotations),std::move(edge_signals)};
 }
 
+template <typename Graph>
+auto embedK33(IndexedGraph<Graph> g) -> EmbeddedGraph<Graph>{
+
+	rotations_t<Graph> rotations(g.numVertices());
+
+	//rotations of degree 2 vertices
+	for(auto&& v : g.vertices()){
+		if(g.degree(v)==2){
+			for(auto&& e : g.incidentEdges(v))
+				rotations[g.index(v)].push_back(e);
+		}
+	}
+
+	vertex_t<Graph> v0;
+	for(auto&& v : g.vertices()){
+		if(g.degree(v)==3)
+			v0 = v;
+	}
+
+	//follow the path until the next degree 3 vertex
+	auto follow_path = [&g](auto v,auto p){
+		while(g.degree(v)!=3){
+			for(auto&& w : g.neighbors(v)){
+				if(w!=p){
+					p=v;
+					v=w;
+					break;
+				}
+			}
+		}
+		return v;
+	};
+
+	auto other_endpoint = [&g](auto e,auto u){
+		auto [a,b] = g.endpoints(e);
+		return  a!=u? a : b;
+	};
+
+	std::vector<size_t> v0_side;
+	v0_side.push_back(v0);
+
+	std::vector<size_t> other_side;
+
+	for(auto&& e : g.incidentEdges(v0)){
+		auto u = other_endpoint(e,v0);
+		auto v = follow_path(u,v0);
+		other_side.push_back(g.index(v));
+	}
+
+	auto v1 = other_side[0];
+	for(auto&& e : g.incidentEdges(v1)){
+		auto u = other_endpoint(e,v1);
+		auto v = follow_path(u,v1);
+		if(v!=v0)
+			v0_side.push_back(g.index(v));
+	}
+
+
+	for(auto&& u : v0_side){
+		edge_t<Graph> v1_edge;
+		edge_t<Graph> v3_edge;
+		edge_t<Graph> v5_edge;
+		for(auto&& e : g.incidentEdges(u)){
+			auto v = other_endpoint(e,u);
+			auto w = follow_path(v,u);
+			if(w==other_side[0])
+				v1_edge=e;
+			else if(w==other_side[1])
+				v3_edge=e;
+			else
+				v5_edge=e;
+		}
+
+		rotations[g.index(u)].push_back(v1_edge);
+		rotations[g.index(u)].push_back(v3_edge);
+		rotations[g.index(u)].push_back(v5_edge);
+	}
+
+	for(auto&& u : other_side){
+		edge_t<Graph> v0_edge;
+		edge_t<Graph> v2_edge;
+		edge_t<Graph> v4_edge;
+		for(auto&& e : g.incidentEdges(u)){
+			auto v = other_endpoint(e,u);
+			auto w = follow_path(v,u);
+			if(w==v0_side[0])
+				v0_edge=e;
+			else if(w==v0_side[1])
+				v2_edge=e;
+			else
+				v4_edge=e;
+		}
+
+		rotations[g.index(u)].push_back(v0_edge);
+		rotations[g.index(u)].push_back(v2_edge);
+		rotations[g.index(u)].push_back(v4_edge);
+	}
+
+	//for(auto&& pi){
+	//	for(auto&& e : pi)
+	//		std::cout << e << ' ';
+	//	std::cout << std::endl;
+	//}
+
+
+	std::vector<int> edge_signals(g.numEdges(),1);
+
+	//(0,3) path
+	edge_signals[g.index(rotations[g.index(v0_side[0])][1])] = -1;
+	//(2,5) path
+	edge_signals[g.index(rotations[g.index(v0_side[1])][2])] = -1;
+	//(4,1) path
+	edge_signals[g.index(rotations[g.index(v0_side[2])][0])] = -1;
+
+	return EmbeddedGraph<Graph>(std::move(g),std::move(rotations),std::move(edge_signals));
+	
+}
 
 }//namespace gdraw
