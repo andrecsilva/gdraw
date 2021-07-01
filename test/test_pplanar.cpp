@@ -8,6 +8,7 @@
 
 #include <gdraw/generators.hpp>
 #include <gdraw/util.hpp>
+#include <gdraw/embedded_graphs.hpp>
 #include <gdraw/pplane.hpp>
 
 #define ASSERT(x) { if (!(x)) std::cout << __FUNCTION__ << " failed on line " << __LINE__ << std::endl; }
@@ -51,9 +52,63 @@ auto test_doublePlanarCover()
 	ASSERT(result);
 }
 
+auto test_embedk33(){
+	auto g = IndexedGraph<AdjList>{getKpq<AdjList>(3,3)};
+
+	auto eg = embedK33(std::move(g));
+
+	//printGraph(eg);
+	//printEmbedding(eg);
+
+	auto fw = allFacialWalks(eg);
+
+	ASSERT(fw.size()==4);
+
+	//for(auto&& w : fw){
+	//	for(auto&& e : w){
+	//		std::cout << e << ' ';
+	//	}
+	//	std::cout << std::endl;
+	//}
+
+}
+
+auto test_embedk332(){
+
+	auto g = IndexedGraph<AdjList>{getKpq<AdjList>(3,3)};
+
+	auto subdivide = [&g](auto e){
+		auto [a,b] = g.endpoints(e);
+		auto s = g.addVertex();
+		auto e_idx = g.index(e);
+		g.removeEdge(e);
+		g.addEdge(a,s,e_idx);
+		g.addEdge(b,s);
+	};
+
+	subdivide(g.edge(0,3).value());
+	subdivide(g.edge(0,6).value());
+	subdivide(g.edge(0,7).value());
+
+	subdivide(g.edge(3,1).value());
+	subdivide(g.edge(3,9).value());
+	subdivide(g.edge(3,10).value());
+
+	auto eg = embedK33(std::move(g));
+
+	//printGraph(eg);
+	//printEmbedding(eg);
+
+	auto fw = allFacialWalks(eg);
+
+	ASSERT(fw.size()==4);
+}
+
 int main(){
 	std::cout << "Testing : " << __FILE__ << std::endl;
 
 	test_doubleCover();
 	test_doublePlanarCover();
+	test_embedk33();
+	test_embedk332();
 }
