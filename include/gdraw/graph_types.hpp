@@ -26,7 +26,7 @@ template <typename T,typename Graph>
 concept EdgeRange = std::ranges::common_range<T> && std::is_same<std::remove_cvref_t<std::ranges::range_reference_t<T>>,edge_t<Graph>>::value;
 
 template <typename T,typename Graph>
-concept VertexRange = std::ranges::range<T> && std::is_same<std::remove_cvref_t<std::ranges::range_reference_t<T>>,vertex_t<Graph>>::value;
+concept VertexRange = std::ranges::common_range<T> && std::is_same<std::remove_cvref_t<std::ranges::range_reference_t<T>>,vertex_t<Graph>>::value;
 
 constexpr bool debug = 0;
 
@@ -243,13 +243,6 @@ class IndexedGraph : public GraphWrapper<Graph>{
 			return add_vertex(this->getGraph());
 		}
 
-		//auto remove_edge(edge_t<Graph> e){
-		//	auto e_index = g.index(e);
-		//	auto f = edges_by_index[ecount-1];
-		//	edges_by_index[e_index] = f;
-		//	g.change_index(f,e_index);
-		//}
-
 		inline auto edges() const{
 			return range(detail::edges_iterator(this->getGraph()));
 		}
@@ -395,8 +388,6 @@ class IndexedSubgraph: public IndexedGraph<Graph>{
 
 };
 
-
-
 template <template <typename> typename T,typename Graph>
 concept AsGraphWrapper = std::convertible_to<T<Graph>,GraphWrapper<Graph>>;
 
@@ -435,10 +426,6 @@ class PureEmbeddedGraph : public IndexedGraph<Graph>{
 				edges_by_index[ei] = e;
 			}
 			
-			//auto endpoints = [&other](auto e){
-			//	return std::make_tuple(source(e,other.getGraph()),target(e,other.getGraph()));
-			//};
-
 			//for(auto&& pi_u : other.rotations){
 			//	for(auto&& e : pi_u){
 			//		auto [u,v] = endpoints(e);
@@ -488,9 +475,6 @@ class EmbeddedGraph : public PureEmbeddedGraph<Graph>{
 			PureEmbeddedGraph<Graph>{std::move(g),std::move(rotations)},
 			edge_signals(std::move(edge_signals)){}
 
-		//OrientableEmbeddedGraph(OrientableEmbeddedGraph& other) = default;
-		//OrientableEmbeddedGraph(OrientableEmbeddedGraph&& other) = default;
-
 		inline auto signal(edge_t<Graph> e) const -> int{
 			auto edgei_map = get(boost::edge_index, this->getGraph());
 			return edge_signals[get(edgei_map,e)];
@@ -536,7 +520,7 @@ class NonOrientableEmbeddedGraph : public EmbeddedGraph<Graph>{
 
 //TODO include the genus template parameter on this class
 /** 
- * A graph togheter with a list of edges that induces a forbidden subgraph.
+ * A graph together with a list of edges that induces a forbidden subgraph.
  */
 template <typename Graph>
 class NonEmbeddableGraph : public IndexedGraph<Graph>{
@@ -689,10 +673,6 @@ class DrawnGraph : public IndexedGraph<Graph>{
 		}
 };
 
-template <template <typename,int> typename T,typename Graph,int Genus>
-concept Embeddable = std::is_same<T<Graph,Genus>,OrientableEmbeddedGraph<Graph,Genus>>::value ||
-std::is_same<T<Graph,Genus>,NonOrientableEmbeddedGraph<Graph,Genus>>::value;
-
 template <typename Graph>
 using PlanarGraph = OrientableEmbeddedGraph<Graph,0>;
 
@@ -734,7 +714,8 @@ auto graph_copy(const auto& g, const auto& g_edges){
 	return std::make_tuple(std::move(h),std::move(h_edges));
 }
 
-/** Lists all the vertices and edges of a graph with its indexes.
+/** 
+ * Lists all the vertices and edges of a graph with its indexes.
  */
 template <typename Graph>
 void printGraph(const IndexedGraph<Graph>& g){
@@ -752,10 +733,9 @@ void printGraph(const IndexedGraph<Graph>& g){
 	std::cout << std::endl;
 }
 
-/** Prints the embedding scheme of an embedded graph.
+/**
+ * Prints the embedding scheme of an embedded graph.
  */
-//template<template<typename,int> typename T,typename Graph, int Genus>
-//requires Embeddable<T,Graph,Genus>
 template <typename Graph>
 auto printEmbedding(const EmbeddedGraph<Graph>& g){
 	for(auto&& pi_u : g.rotations){

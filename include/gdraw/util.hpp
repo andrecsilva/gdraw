@@ -367,8 +367,8 @@ auto dfsBridgesVisit(const IndexedGraph<Graph>& g,
  */
 template <typename Graph>
 auto bridges(const IndexedGraph<Graph>& g, const std::vector<edge_t<Graph>>& subgraph){
+
 	//returns a vertex list of all the bridges of subgraph
-	//trivial bridges: just check the edge list of all the subgraph vertices
 	std::vector<bool> vertices_in_subgraph(g.numVertices(),false);
 	std::vector<bool> edges_in_subgraph(g.numEdges(),false);
 
@@ -384,8 +384,6 @@ auto bridges(const IndexedGraph<Graph>& g, const std::vector<edge_t<Graph>>& sub
 		dfs_number[g.index(b)] = dfs_count++;
 	}
 
-	//copy
-	
 	std::vector<std::vector<edge_t<Graph>>> bridges;
 
 	for(auto&& v : g.vertices()){
@@ -397,7 +395,7 @@ auto bridges(const IndexedGraph<Graph>& g, const std::vector<edge_t<Graph>>& sub
 		}
 	}
 
-	//trivial bridges
+	//add trivial bridges
 	for(auto&& e : g.edges()){
 		if(!edges_in_subgraph[g.index(e)]){
 			//grab the other endpoint
@@ -440,7 +438,7 @@ std::vector<edge_t<Graph>> randomSpanningTree(const Wrapper<Graph>& g){
  * @param g: A GraphWrapper
  */
 template<typename Graph,typename T>
-requires std::ranges::common_range<T>
+requires EdgeRange<T,Graph>
 auto coSubgraphEdges(const GraphWrapper<Graph>& g, T&& subgraph_edges){
 	std::vector<edge_t<Graph>> cs_edges;
 
@@ -462,7 +460,9 @@ auto coSubgraphEdges(const GraphWrapper<Graph>& g, T&& subgraph_edges){
 
 	return cs_edges;
 }
-
+/**
+ * Creates a subgraph based on an edge list.
+ */
 template <typename Graph,typename T>
 requires EdgeRange<T,Graph>
 auto createSubgraph(IndexedGraph<Graph>& g, T&& edge_list){

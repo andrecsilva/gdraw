@@ -441,8 +441,6 @@ auto allFacialWalks(const EmbeddedGraph<Graph>& g){
 	std::vector<std::vector<edge_t<Graph>>> next_edge(g.numEdges(),std::vector<edge_t<Graph>>(2));
 	std::vector<std::vector<edge_t<Graph>>> prev_edge(g.numEdges(),std::vector<edge_t<Graph>>(2));
 
-
-
 	for(auto&& u : g.vertices()){
 		//std::cout << u << std::endl;
 		for(size_t i=0; i<g.rotations[g.index(u)].size();i++){
