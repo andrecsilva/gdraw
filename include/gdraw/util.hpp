@@ -269,7 +269,6 @@ auto fundamentalCycle(const IndexedGraph<Graph>& g,
 	return u_path;
 }
 
-
 /**
  * Using a tree in parent format, traces a cycle from a back edge
  */
@@ -502,6 +501,85 @@ auto createSubgraph(IndexedGraph<Graph>& g, T&& edge_list){
 	return IndexedSubgraph(std::move(subg),
 			std::move(ivertex_map),
 			std::move(iedge_map));
+}
+
+/**
+ * Checks if two bridges overlap. The input parameters are characteristic vectors of their attachments. 
+ */
+template <typename T,typename Graph>
+requires std::ranges::forward_range<T> && EdgeRange<T,Graph>
+auto bridgeOverlap(const IndexedGraph<Graph> g,
+		const std::vector<bool> b1_attachments,
+		const std::vector<bool> b2_attachments,
+		T&& cycle) -> std::optional<std::vector<vertex_t<Graph>>>{
+
+	//overlap
+	std::vector<vertex_t<Graph>> overlap;
+	for(auto&& v : cycleVertices(cycle,g)){
+		if(b1_attachments[g.index(v)] && b2_attachments[g.index(v)]){
+			overlap.push_back(v);
+			if(overlap.size()==3)
+				return overlap;
+		}
+	}
+
+	auto find_common = [&g](auto e,auto f){
+		auto [v,w] = g.endpoints(e);
+		auto [x,y] = g.endpoints(f);
+		if(v==x || v==y)
+			return v;
+		if(w==x || w==y)
+			return w;
+		return IndexedGraph<Graph>::nullVertex();
+	};
+
+	auto next_vertex = [&cycle,&g,&find_common](auto ei){
+		auto next = ei+1==cycle.end()?cycle.begin():ei++;
+		return find_common(*ei,*next);
+	};
+
+
+	vertex_t<Graph> first;
+	auto first_iterator = cycle.begin();
+	for(;first_iterator!=cycle.end();first_iterator++){
+		auto v = next_vertex(first_iterator);
+		if(b1_attachments[v] || b2_attachments[v]){
+			first = v;
+			break;
+		}
+	}
+
+	if(first_iterator==cycle.end())
+		return {};
+
+	bool inb1 = b1_attachments[first];
+	overlap = {first};
+
+	//std::cout << first << ' ' << *first_iterator << std::endl;
+	auto ei = first_iterator+1==cycle.end()?cycle.begin():first_iterator+1;
+
+	do{
+		auto v = next_vertex(ei);
+		//std::cout << v << ' ' << *ei << std::endl;
+		if(inb1){
+			if(b2_attachments[g.index(v)]){
+				overlap.push_back(v);
+				if(overlap.size()==4)
+					return overlap;
+				inb1=!inb1;
+			}
+		}else{
+			if(b1_attachments[g.index(v)]){
+				overlap.push_back(v);
+				if(overlap.size()==4)
+					return overlap;
+				inb1=!inb1;
+			}
+		}
+		ei = ei+1==cycle.end()? cycle.begin() : ei+1;
+	}while(ei!=first_iterator);
+
+	return {};
 }
 
 /*
