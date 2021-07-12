@@ -28,7 +28,7 @@ concept EdgeRange = std::ranges::common_range<T> && std::is_same<std::remove_cvr
 template <typename T,typename Graph>
 concept VertexRange = std::ranges::common_range<T> && std::is_same<std::remove_cvref_t<std::ranges::range_reference_t<T>>,vertex_t<Graph>>::value;
 
-constexpr bool debug = 0;
+constexpr bool debug = false;
 
 namespace detail{
 
@@ -160,7 +160,7 @@ class GraphWrapper{
 };
 
 /**
- * A wrapper around a boost graph with indexes as an internal property for both edges
+ * An adaptor around a boost graph with indexes as an internal property for both edges
  * and vertices. The methods of this class will take care of the indexing of the edges
  * for you.
  */
@@ -293,19 +293,106 @@ class IndexedGraph : public GraphWrapper<Graph>{
 };
 
 /**
+ * A base class for decorating IndexedGraphs. It should implement all 
+ * methods of IndexedGraph.
+ */
+template <typename Graph>
+class IndexedGraphDecorator{
+
+	public:
+		IndexedGraph<Graph>& g;
+
+		IndexedGraphDecorator(IndexedGraph<Graph>& g) : g(g){
+			if constexpr(debug){
+				std::cout << "IndexedGraphDecorator constructor" << std::endl;
+			}
+		}
+
+		inline auto index(edge_t<Graph> e) const{
+			return g.index(e);
+		}
+
+		inline auto index(vertex_t<Graph> v) const{
+			return g.index(v);
+		}
+
+		auto changeIndex(edge_t<Graph> e, auto i) const -> void{
+			g.changeIndex(e,i);
+		}
+
+		auto addEdge(vertex_t<Graph> u, vertex_t<Graph> v, auto i) -> edge_t<Graph>{
+			return g.addEdge(u,v,i);
+		}
+
+		auto addEdge(vertex_t<Graph> u, vertex_t<Graph> v) -> edge_t<Graph>{
+			return g.addEdge(u,v);
+		}
+
+		auto removeEdge(edge_t<Graph> e) -> void{ 
+			g.removeEdge(e);
+		}
+
+		auto addVertex() -> vertex_t<Graph>{
+			return g.addVertex();
+		}
+
+		inline auto edges() const{
+			return g.edges();
+		}
+
+		inline auto vertices() const{
+			return g.vertices();
+		}
+
+		inline auto incidentEdges(vertex_t<Graph> v) const{
+			return g.incidentEdges(v);
+		}
+
+		inline auto neighbors(vertex_t<Graph> v) const{
+			return g.neighbors();
+		}
+
+		inline auto numEdges() const{
+			return g.numEdges();
+		}
+
+		inline auto numVertices() const{
+			return g.numVertices();
+		}
+
+		inline auto degree(vertex_t<Graph> v) const{
+			return g.degree(v);
+		}
+
+		inline auto endpoints(edge_t<Graph> e) const{
+			return g.endpoints(e);
+		}
+
+		inline auto edge(vertex_t<Graph> u, vertex_t<Graph> v) -> std::optional<edge_t<Graph>>{
+			return g.edge(u,v);
+		}
+
+		inline auto vertex(size_t n) -> vertex_t<Graph>{
+			return g.vertex(n);
+		}
+		
+		inline static auto nullVertex(){
+			return IndexedGraph<Graph>::nullVertex();
+		}
+};
+
+/**
  * Constructs and maintain edge list for the given IndexedGraph. 
  */
 template <typename Graph>
-class EdgeList{
+class EdgeList : public IndexedGraphDecorator<Graph>{
 
 	public:
 		std::vector<edge_t<Graph>> edges_by_index;
 
-		IndexedGraph<Graph>& g;
-		
 		boost::graph_traits<Graph>::edges_size_type ecount;
 
-		EdgeList(IndexedGraph<Graph>& g) : g(g){
+		EdgeList(IndexedGraph<Graph>& g) : IndexedGraphDecorator<Graph>(g){
 
 			edges_by_index = std::vector<edge_t<Graph>>(g.numEdges());
 
@@ -320,12 +407,12 @@ class EdgeList{
 
 		auto addEdge(vertex_t<Graph> u, vertex_t<Graph> v) -> edge_t<Graph>{
 			if(ecount < edges_by_index.size()){
-				auto e = g.addEdge(u,v,ecount);
+				auto e = this->g.addEdge(u,v,ecount);
 				edges_by_index[ecount] = e;
 				ecount++;
 				return e;
 			}else{
-				auto e = g.addEdge(u,v,ecount);
+				auto e = this->g.addEdge(u,v,ecount);
 				edges_by_index.push_back(e);
 				ecount++;
 				return e;
@@ -333,17 +420,17 @@ class EdgeList{
 		}
 
 		auto addEdge(vertex_t<Graph> u, vertex_t<Graph> v, auto i) -> edge_t<Graph>{
-			auto e = g.addEdge(u,v,i);
+			auto e = this->g.addEdge(u,v,i);
 			edges_by_index[i] = e;
 			return e;
 		}
 
 		auto removeEdge(edge_t<Graph> e) -> void{
-			auto e_index = g.index(e);
+			auto e_index = this->g.index(e);
 			auto f = edges_by_index[ecount-1];
 			edges_by_index[e_index] = f;
-			g.changeIndex(f,e_index);
-			remove_edge(e,g.getGraph());
+			this->g.changeIndex(f,e_index);
+			remove_edge(e,this->g.getGraph());
 			ecount--;
 		}
 
@@ -353,7 +440,7 @@ class EdgeList{
 
 		auto print() -> void{
 			for(auto&& e : edges_by_index)
-				std::cout << e << '[' << g.index(e) << ']' << ' ';
+				std::cout << e << '[' << this->g.index(e) << ']' << ' ';
 			std::cout << std::endl;
 		}
 
