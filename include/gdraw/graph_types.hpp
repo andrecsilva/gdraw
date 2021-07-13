@@ -177,6 +177,10 @@ class IndexedGraph : public GraphWrapper<Graph>{
 			edgei_map = get( boost::edge_index, g);
 		}
 
+		//IndexedGraph(IndexedGraphDecorator<Graph>& dg){
+		//	this = dg.g;
+		//}
+
 		IndexedGraph(const IndexedGraph<Graph>& other) 
 		: GraphWrapper<Graph>(other)
 		{
@@ -379,7 +383,28 @@ class IndexedGraphDecorator{
 		inline static auto nullVertex(){
 			return IndexedGraph<Graph>::nullVertex();
 		}
+
+		inline Graph& getGraph(){
+			return this->g.getGraph();
+		}
+
+		inline Graph& getGraph() const{
+			return this->g.getGraph();
+		}
+
+		//operator IndexedGraph<Graph>&(){
+		//	return g;
+		//}
+
+		//operator const IndexedGraph<Graph>&() const{
+		//	return g;
+		//}
 };
+
+template <template <typename> typename S,typename Graph>
+concept AsIndexedGraph = std::is_same<std::remove_cvref_t<S<Graph>>,IndexedGraph<Graph>>::value ||
+		std::is_same<std::remove_cvref_t<S<Graph>>,IndexedGraphDecorator<Graph>>::value;
+
 
 /**
  * Constructs and maintain edge list for the given IndexedGraph. 
@@ -804,8 +829,9 @@ auto graph_copy(const auto& g, const auto& g_edges){
 /** 
  * Lists all the vertices and edges of a graph with its indexes.
  */
-template <typename Graph>
-void printGraph(const IndexedGraph<Graph>& g){
+template <template <typename> typename S,typename Graph>
+requires AsIndexedGraph<S,Graph>
+void printGraph(const S<Graph>& g){
 	std::cout << "Vertices: " << std::endl;
 	for(auto&& v : range(vertices(g.getGraph())))
 		std::cout << v << ' ';
