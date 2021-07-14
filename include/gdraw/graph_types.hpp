@@ -304,80 +304,80 @@ template <typename Graph>
 class IndexedGraphDecorator{
 
 	public:
-		IndexedGraph<Graph>& g;
+		IndexedGraph<Graph>& graph;
 
-		IndexedGraphDecorator(IndexedGraph<Graph>& g) : g(g){
+		IndexedGraphDecorator(IndexedGraph<Graph>& graph) : graph(graph){
 			if constexpr(debug){
 				std::cout << "IndexedGraphDecorator constructor" << std::endl;
 			}
 		}
 
 		inline auto index(edge_t<Graph> e) const{
-			return g.index(e);
+			return graph.index(e);
 		}
 
 		inline auto index(vertex_t<Graph> v) const{
-			return g.index(v);
+			return graph.index(v);
 		}
 
 		auto changeIndex(edge_t<Graph> e, auto i) const -> void{
-			g.changeIndex(e,i);
+			graph.changeIndex(e,i);
 		}
 
 		auto addEdge(vertex_t<Graph> u, vertex_t<Graph> v, auto i) -> edge_t<Graph>{
-			return g.addEdge(u,v,i);
+			return graph.addEdge(u,v,i);
 		}
 
 		auto addEdge(vertex_t<Graph> u, vertex_t<Graph> v) -> edge_t<Graph>{
-			return g.addEdge(u,v);
+			return graph.addEdge(u,v);
 		}
 
 		auto removeEdge(edge_t<Graph> e) -> void{ 
-			g.removeEdge(e);
+			graph.removeEdge(e);
 		}
 
 		auto addVertex() -> vertex_t<Graph>{
-			return g.addVertex();
+			return graph.addVertex();
 		}
 
 		inline auto edges() const{
-			return g.edges();
+			return graph.edges();
 		}
 
 		inline auto vertices() const{
-			return g.vertices();
+			return graph.vertices();
 		}
 
 		inline auto incidentEdges(vertex_t<Graph> v) const{
-			return g.incidentEdges(v);
+			return graph.incidentEdges(v);
 		}
 
 		inline auto neighbors(vertex_t<Graph> v) const{
-			return g.neighbors();
+			return graph.neighbors();
 		}
 
 		inline auto numEdges() const{
-			return g.numEdges();
+			return graph.numEdges();
 		}
 
 		inline auto numVertices() const{
-			return g.numVertices();
+			return graph.numVertices();
 		}
 
 		inline auto degree(vertex_t<Graph> v) const{
-			return g.degree(v);
+			return graph.degree(v);
 		}
 
 		inline auto endpoints(edge_t<Graph> e) const{
-			return g.endpoints(e);
+			return graph.endpoints(e);
 		}
 
 		inline auto edge(vertex_t<Graph> u, vertex_t<Graph> v) -> std::optional<edge_t<Graph>>{
-			return g.edge(u,v);
+			return graph.edge(u,v);
 		}
 
 		inline auto vertex(size_t n) -> vertex_t<Graph>{
-			return g.vertex(n);
+			return graph.vertex(n);
 		}
 		
 		inline static auto nullVertex(){
@@ -385,19 +385,19 @@ class IndexedGraphDecorator{
 		}
 
 		inline Graph& getGraph(){
-			return this->g.getGraph();
+			return this->graph.getGraph();
 		}
 
 		inline Graph& getGraph() const{
-			return this->g.getGraph();
+			return this->graph.getGraph();
 		}
 
 		//operator IndexedGraph<Graph>&(){
-		//	return g;
+		//	return graph;
 		//}
 
 		//operator const IndexedGraph<Graph>&() const{
-		//	return g;
+		//	return graph;
 		//}
 };
 
@@ -417,27 +417,27 @@ class EdgeList : public IndexedGraphDecorator<Graph>{
 
 		boost::graph_traits<Graph>::edges_size_type ecount;
 
-		EdgeList(IndexedGraph<Graph>& g) : IndexedGraphDecorator<Graph>(g){
+		EdgeList(IndexedGraph<Graph>& graph) : IndexedGraphDecorator<Graph>(graph){
 
-			edges_by_index = std::vector<edge_t<Graph>>(g.numEdges());
+			edges_by_index = std::vector<edge_t<Graph>>(graph.numEdges());
 
-			for(auto&& e : g.edges()){
-				edges_by_index[g.index(e)] = e;
+			for(auto&& e : graph.edges()){
+				edges_by_index[graph.index(e)] = e;
 			}
 
-			ecount = g.numEdges();
+			ecount = graph.numEdges();
 			//std::cout << ecount << std::endl;
 
 		}
 
 		auto addEdge(vertex_t<Graph> u, vertex_t<Graph> v) -> edge_t<Graph>{
 			if(ecount < edges_by_index.size()){
-				auto e = this->g.addEdge(u,v,ecount);
+				auto e = this->graph.addEdge(u,v,ecount);
 				edges_by_index[ecount] = e;
 				ecount++;
 				return e;
 			}else{
-				auto e = this->g.addEdge(u,v,ecount);
+				auto e = this->graph.addEdge(u,v,ecount);
 				edges_by_index.push_back(e);
 				ecount++;
 				return e;
@@ -445,17 +445,17 @@ class EdgeList : public IndexedGraphDecorator<Graph>{
 		}
 
 		auto addEdge(vertex_t<Graph> u, vertex_t<Graph> v, auto i) -> edge_t<Graph>{
-			auto e = this->g.addEdge(u,v,i);
+			auto e = this->graph.addEdge(u,v,i);
 			edges_by_index[i] = e;
 			return e;
 		}
 
 		auto removeEdge(edge_t<Graph> e) -> void{
-			auto e_index = this->g.index(e);
+			auto e_index = this->graph.index(e);
 			auto f = edges_by_index[ecount-1];
 			edges_by_index[e_index] = f;
-			this->g.changeIndex(f,e_index);
-			remove_edge(e,this->g.getGraph());
+			this->graph.changeIndex(f,e_index);
+			remove_edge(e,this->graph.getGraph());
 			ecount--;
 		}
 
@@ -465,37 +465,38 @@ class EdgeList : public IndexedGraphDecorator<Graph>{
 
 		auto print() -> void{
 			for(auto&& e : edges_by_index)
-				std::cout << e << '[' << this->g.index(e) << ']' << ' ';
+				std::cout << e << '[' << this->graph.index(e) << ']' << ' ';
 			std::cout << std::endl;
 		}
 
 };
 
 /**
- * An IndexedGraph with maps from its vertices and edges to the descriptors
- * of its supergraph.
+ * Contains a vertex and edge map from one IndexedGraph to another.
+ * For an edge e of graph, map(e) contains the edge of the supergraph
+ * it is mapped to.
  */
 template <typename Graph>
-class IndexedSubgraph: public IndexedGraph<Graph>{
+class SubgraphMap: public IndexedGraphDecorator<Graph>{
 
 	public:
 		std::vector<vertex_t<Graph>> ivertex_map;
 		std::vector<edge_t<Graph>> iedge_map;
 
-		IndexedSubgraph(IndexedGraph<Graph> g,
+		SubgraphMap(IndexedGraph<Graph>& from,
 				std::vector<vertex_t<Graph>> ivertex_map,
 				std::vector<edge_t<Graph>> iedge_map):
-			IndexedGraph<Graph>{std::move(g)},
+			IndexedGraphDecorator<Graph>{from},
 			ivertex_map{std::move(ivertex_map)},
 			iedge_map{std::move(iedge_map)}{}
 		
 
 		inline auto map(edge_t<Graph> e) -> edge_t<Graph>{
-			return iedge_map[this->index(e)];
+			return iedge_map[this->graph.index(e)];
 		}
 
 		inline auto map(vertex_t<Graph> v) -> vertex_t<Graph>{
-			return ivertex_map[this->index(v)];
+			return ivertex_map[this->graph.index(v)];
 		}
 
 };

@@ -461,6 +461,9 @@ auto coSubgraphEdges(const GraphWrapper<Graph>& g, T&& subgraph_edges){
 }
 /**
  * Creates a subgraph based on an edge list.
+ * Returns a tuple containing the an IndexedGraph representing
+ * the subgraph and a SubgraphMap containing the maps from its
+ * vertices and edges to g.
  */
 template <typename Graph,typename T>
 requires EdgeRange<T,Graph>
@@ -486,8 +489,8 @@ auto createSubgraph(IndexedGraph<Graph>& g, T&& edge_list){
 
 		vertex_map[g.index(a)] = x;
 		vertex_map[g.index(b)] = y;
-
-		iedge_map.push_back(subg.addEdge(x,y));
+		subg.addEdge(x,y);
+		iedge_map.push_back(e);
 	}
 	std::vector<vertex_t<Graph>> ivertex_map(subg.numVertices());
 
@@ -498,9 +501,9 @@ auto createSubgraph(IndexedGraph<Graph>& g, T&& edge_list){
 		}
 	}
 
-	return IndexedSubgraph(std::move(subg),
-			std::move(ivertex_map),
-			std::move(iedge_map));
+	return std::make_tuple(subg,
+			SubgraphMap{g,std::move(ivertex_map),
+			std::move(iedge_map)});
 }
 
 /**
