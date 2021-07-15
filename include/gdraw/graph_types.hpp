@@ -401,9 +401,13 @@ class IndexedGraphDecorator{
 		//}
 };
 
+//template <template <typename> typename S,typename Graph>
+//concept AsIndexedGraph = std::is_same<std::remove_cvref_t<S<Graph>>,IndexedGraph<Graph>>::value ||
+//		std::is_same<std::remove_cvref_t<S<Graph>>,IndexedGraphDecorator<Graph>>::value;
+//
 template <template <typename> typename S,typename Graph>
-concept AsIndexedGraph = std::is_same<std::remove_cvref_t<S<Graph>>,IndexedGraph<Graph>>::value ||
-		std::is_same<std::remove_cvref_t<S<Graph>>,IndexedGraphDecorator<Graph>>::value;
+concept AsIndexedGraph = std::is_base_of<IndexedGraph<Graph>,std::remove_cvref_t<S<Graph>>>::value ||
+		std::is_base_of<IndexedGraphDecorator<Graph>,std::remove_cvref_t<S<Graph>>>::value;
 
 
 /**
