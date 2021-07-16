@@ -90,7 +90,7 @@ struct FacialCyclesVisitor : public boost::planar_face_traversal_visitor{
 /**
  * Finds a facial cycle in an embedded graph `g`.
  *
- * Just a wrap aroung Boost's `planar_face_traversal` function.
+ * Just a wrap around Boost's `planar_face_traversal` function.
  */
 template <typename Graph,int Genus>
 auto findFacialCycle(const OrientableEmbeddedGraph<Graph,Genus>& g) -> std::vector<vertex_t<Graph>>{
@@ -105,7 +105,7 @@ auto findFacialCycle(const OrientableEmbeddedGraph<Graph,Genus>& g) -> std::vect
 /**
  * Finds the largest facial cycle in an embedded graph `g`.
  *
- * Just a wrap aroung Boost's `planar_face_traversal` function.
+ * Just a wrap around Boost's `planar_face_traversal` function.
  */
 template <typename Graph>
 auto findLargestFacialCycle(const PlanarGraph<Graph>& g) -> std::vector<vertex_t<Graph>>{
@@ -125,11 +125,11 @@ auto findLargestFacialCycle(const PlanarGraph<Graph>& g) -> std::vector<vertex_t
 }
 
 /**
- * Test wheter `g` is a planar graph.
+ * Test whether `g` is a planar graph.
  *
  * Finds either an embedding or Kuratowski subgraph as a side-effect.
  *
- * @return : A `std::variant` containing either the graph with an embedding (`PlanarGraph`) or with a list of edges that induces a Kuratowksi subgraph (`NonPlanarGraph`).
+ * @return : A `std::variant` containing either the graph with an embedding (`PlanarGraph`) or with a list of edges that contains a Kuratowksi subgraph (`NonPlanarGraph`) as a minor.
  */
 template <typename Graph>
 auto planeEmbedding(IndexedGraph<Graph> g) -> std::variant<PlanarGraph<Graph>,NonPlanarGraph<Graph>>{
@@ -145,10 +145,63 @@ auto planeEmbedding(IndexedGraph<Graph> g) -> std::variant<PlanarGraph<Graph>,No
 			,boost::boyer_myrvold_params::kuratowski_subgraph = std::back_inserter(kuratowski_edges)
 			);
 
+	//std::cout << "planeEmbedding" << std::endl;
+	//for(auto&& e : kuratowski_edges)
+	//	std::cout << e << ' ';
+	//std::cout << std::endl;
+
 	if(embedded){
 		return OrientableEmbeddedGraph<Graph,0>(std::move(g),std::move(rotations),std::vector<int>(num_edges(g.getGraph()),1));
 	}
 	return NonEmbeddableGraph<Graph>(std::move(g),std::move(kuratowski_edges));
+}
+
+/**
+ * Recursively removes all degree 1 vertices until no more remain. It is necessary due to a possible bug in Boost's planarity test implementation.
+ */
+template <typename Graph>
+auto isolateKuratowskiSubgraph(const IndexedGraph<Graph>& g, std::vector<edge_t<Graph>>& ks_edges){
+
+	std::vector<std::vector<edge_t<Graph>>> neighbors(g.numVertices());
+
+	//the number of neighbors should not be greater than 5...
+	for(auto&& e : ks_edges){
+		auto [a,b] = g.endpoints(e);
+		neighbors[g.index(a)].push_back(e);
+		neighbors[g.index(b)].push_back(e);
+	}
+
+	std::vector<bool> to_remove(g.numEdges(),false);
+	std::vector<vertex_t<Graph>> stack;
+	for(auto&& v : g.vertices())
+		if(neighbors[g.index(v)].size()==1)
+			stack.push_back(v);
+
+	while(!stack.empty()){
+		auto v = stack.back();
+		stack.pop_back();
+
+		auto e = neighbors[g.index(v)][0];
+		to_remove[g.index(e)]=true;
+
+		neighbors[g.index(v)].pop_back();
+		auto [a,b] = g.endpoints(e);
+		auto u = a==v ? b : a;
+
+		neighbors[u].erase(std::remove(neighbors[g.index(u)].begin(),
+				neighbors[g.index(u)].end(),
+				e));
+
+		//std::cout << v << std::endl;
+		//std::cout << u << std::endl;
+		//std::cout << e << std::endl;
+		//std::cout << neighbors[u].size() << std::endl;
+		if(neighbors[u].size()==1)
+			stack.push_back(u);
+	}
+
+	std::remove_if(ks_edges.begin(),ks_edges.end(),[&g,&to_remove](auto e){return to_remove[g.index(e)];});
+	
 }
 
 
