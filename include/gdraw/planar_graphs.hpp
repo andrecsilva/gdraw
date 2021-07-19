@@ -190,7 +190,8 @@ auto isolateKuratowskiSubgraph(const IndexedGraph<Graph>& g, std::vector<edge_t<
 
 		neighbors[u].erase(std::remove(neighbors[g.index(u)].begin(),
 				neighbors[g.index(u)].end(),
-				e));
+				e),
+				neighbors[g.index(u)].end());
 
 		//std::cout << v << std::endl;
 		//std::cout << u << std::endl;
@@ -200,7 +201,11 @@ auto isolateKuratowskiSubgraph(const IndexedGraph<Graph>& g, std::vector<edge_t<
 			stack.push_back(u);
 	}
 
-	std::remove_if(ks_edges.begin(),ks_edges.end(),[&g,&to_remove](auto e){return to_remove[g.index(e)];});
+	ks_edges.erase(std::remove_if(ks_edges.begin(),
+				ks_edges.end(),
+				[&g,&to_remove](auto e)
+				{return to_remove[g.index(e)];}
+				),ks_edges.end());
 	
 }
 
