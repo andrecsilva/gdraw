@@ -279,14 +279,14 @@ class IndexedGraph : public GraphWrapper<Graph>{
 			return std::make_tuple(source(e,this->getGraph()),target(e,this->getGraph()));
 		}
 
-		inline auto edge(vertex_t<Graph> u, vertex_t<Graph> v) -> std::optional<edge_t<Graph>>{
+		inline auto edge(vertex_t<Graph> u, vertex_t<Graph> v) const -> std::optional<edge_t<Graph>>{
 			auto e = detail::boost_edge(this->getGraph(),u,v);
 			if(e.second)
 				return e.first;
 			return {};
 		}
 
-		inline auto vertex(size_t n) -> vertex_t<Graph>{
+		inline auto vertex(size_t n) const -> vertex_t<Graph>{
 			return detail::boost_vertex(this->getGraph(),n);
 		}
 		

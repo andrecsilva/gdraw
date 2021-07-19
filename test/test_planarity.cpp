@@ -93,10 +93,50 @@ auto test_maximal(){
 	ASSERT(num_edges(pg.getGraph()) == 3*(n+1) - 6);
 }
 
+auto test_isolateKuratowskiSubgraph(){
+	using Graph = AdjList;
+	auto g = IndexedGraph{getKpq<Graph>(5,5)};
+
+	auto vg = planeEmbedding(std::move(g));
+
+	auto ks_edges = std::move(std::get<1>(vg).forbidden_subgraph);
+	g = std::move(std::get<1>(vg));
+
+	//printGraph(g);
+	//
+	//std::cout << std::endl;
+
+	//for(auto&& e : ks_edges)
+	//	std::cout << '[' << g.index(e) << ']' <<  e << ' ' ;
+	//std::cout << std::endl;
+
+	//std::cout << std::endl;
+	isolateKuratowskiSubgraph(g,ks_edges);
+
+	//for(auto&& e : ks_edges)
+	//	std::cout << '[' << g.index(e) << ']' <<  e << ' ' ;
+	//std::cout << std::endl;
+	std::vector<int> degree(g.numVertices(),0);
+	for(auto&& e : ks_edges){
+		auto [a,b] = g.endpoints(e);
+		degree[a]++;
+		degree[b]++;
+	}
+	bool no_degree_1 = true;
+	for(auto&& d : degree)
+		if(d==1){
+			no_degree_1=false;
+			break;
+		}
+	ASSERT(no_degree_1)
+
+}
+
 int main(){
 	std::cout << "Testing : " << __FILE__ << std::endl;
 
 	test_isPlanar();
 	test_maximal();
 	test_largestfacialcycle();
+	test_isolateKuratowskiSubgraph();
 }
