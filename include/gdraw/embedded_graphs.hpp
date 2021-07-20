@@ -16,7 +16,7 @@
 namespace gdraw{
 
 /**
- * Checks wheter the cycle is 1-sided (if the number of negative signal edges is odd).
+ * Checks whether the cycle is 1-sided (if the number of negative signal edges is odd).
  */
 template <typename Graph,EdgeRange<Graph> T>
 auto is1Sided(const EmbeddedGraph<Graph>& g, const T& cycle) -> bool{
@@ -32,7 +32,7 @@ auto is1Sided(const EmbeddedGraph<Graph>& g, const T& cycle) -> bool{
 
 /**
  * Returns the smallest one-sided cycle. It is done using the fundamental
- * cycle method. See the book Graphs os Surface for a proof of this.
+ * cycle method. See the book Graphs on Surface for a proof of this.
  */
 template <typename Graph>
 auto smallest1SidedCycle(const EmbeddedGraph<Graph>& g){
@@ -117,7 +117,7 @@ auto cutAlongCycle(EmbeddedGraph<Graph>& g, const T& nc_cycle){
 		return *(ei+1);
 	};
 
-	//checks wheter an edge is on the left (right) side of the cycle
+	//checks whether an edge is on the left (right) side of the cycle
 	auto is_left = [](auto i,auto ei,auto fi){
 		if(ei< fi){
 			return i<ei || i>fi;
