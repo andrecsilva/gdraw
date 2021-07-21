@@ -374,6 +374,7 @@ auto bridges(const IndexedGraph<Graph>& g, const std::vector<edge_t<Graph>>& sub
 	std::vector<size_t> dfs_number(g.numVertices(),std::numeric_limits<size_t>::max());
 	size_t dfs_count = 1;
 
+	//std::cout << std::boolalpha << (f==subgraph[0]) << std::endl;
 	for(auto&& e : subgraph){
 		auto [a,b] = g.endpoints(e);
 		vertices_in_subgraph[g.index(a)]=true;
@@ -583,6 +584,49 @@ auto bridgeOverlap(const IndexedGraph<Graph> g,
 	}while(ei!=first_iterator);
 
 	return {};
+}
+
+/**
+ * Returns true if a is a subset of b.
+ */
+auto isSubset(std::vector<bool> a, std::vector<bool> b) -> bool{
+	for(size_t i =0;i<a.size();i++){
+		if(a[i] && !b[i])
+			return false;
+	}
+	return true;
+}
+
+/**
+ * Return a characteristic vector of all the attachments of bridge.
+ * in_subg is the characteristic vector of the vertice set of the subgraph
+ * that bridge is a bridge.
+ */
+template <typename Graph>
+auto attachments(const std::vector<edge_t<Graph>>& bridge, const std::vector<bool>& in_subg, const IndexedGraph<Graph>& g){
+	std::vector<bool> is_bridge_attachment(g.numVertices(),false);
+	for(auto&& e : bridge){
+		auto&& [a,b] = g.endpoints(e);
+		is_bridge_attachment[g.index(a)] = in_subg[g.index(a)];
+		is_bridge_attachment[g.index(b)] = in_subg[g.index(b)];
+	}
+	return is_bridge_attachment;
+}
+
+/**
+ * Returns a characteristic vector indicating if a vertex is incident with
+ * an edge of subg.
+ **/
+template <typename T,typename Graph>
+requires std::ranges::forward_range<T> && EdgeRange<T,Graph>
+auto vertices(T&& subg,const IndexedGraph<Graph>& g){
+	std::vector<bool> in_subg(g.numVertices(),false);
+	for(auto&& e : subg){
+		auto&& [a,b] = g.endpoints(e);
+		in_subg[g.index(a)]=true;
+		in_subg[g.index(b)]=true;
+	}
+	return in_subg;
 }
 
 /*
