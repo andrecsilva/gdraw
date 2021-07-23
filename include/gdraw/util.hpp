@@ -589,7 +589,7 @@ auto bridgeOverlap(const IndexedGraph<Graph> g,
 /**
  * Returns true if a is a subset of b.
  */
-auto isSubset(std::vector<bool> a, std::vector<bool> b) -> bool{
+auto isSubset(const std::vector<bool>& a, const std::vector<bool>& b) -> bool{
 	for(size_t i =0;i<a.size();i++){
 		if(a[i] && !b[i])
 			return false;
