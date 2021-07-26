@@ -22,26 +22,29 @@ using AdjList = boost::adjacency_list<
 using namespace gdraw;
 
 auto test_scc(){
-	std::vector<std::vector<bool>> g(8,std::vector<bool>(8,false));
+	std::vector<std::vector<int>> g(8);
 
 	//Wikipedia's example
-	g[0][1]=true;
-	g[1][2]=true;
-	g[1][4]=true;
-	g[1][5]=true;
-	g[2][3]=true;
-	g[2][6]=true;
-	g[3][2]=true;
-	g[3][7]=true;
-	g[4][0]=true;
-	g[4][5]=true;
-	g[5][6]=true;
-	g[6][5]=true;
-	g[7][6]=true;
-	g[7][3]=true;
-
+	g[0].push_back(1);
+	g[1].push_back(2);
+	g[1].push_back(4);
+	g[1].push_back(5);
+	g[2].push_back(3);
+	g[2].push_back(6);
+	g[3].push_back(2);
+	g[3].push_back(7);
+	g[4].push_back(0);
+	g[4].push_back(5);
+	g[5].push_back(6);
+	g[6].push_back(5);
+	g[7].push_back(6);
+	g[7].push_back(3);
 
 	auto comp = stronglyConnectedComponents(g);
+
+	//for(auto&& i :comp)
+	//	std::cout << i << ' ';
+	//std::cout << std::endl;
 
 	ASSERT(comp[0]==0);
 	ASSERT(comp[1]==0);

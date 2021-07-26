@@ -643,26 +643,26 @@ inline auto removeIsolatedVertices(Graph& g){
 }
 
 
-void dfsSCC1(const std::vector<std::vector<bool>>& graph, int v,std::vector<int>& order,std::vector<bool>& visited){
+void dfsSCC1(const std::vector<std::vector<int>>& graph, int v,std::vector<int>& order,std::vector<bool>& visited){
 	visited[v]=true;
-	for(size_t i =0; i< graph.size();i++)
-		if(graph[v][i] && !visited[i])
-			dfsSCC1(graph,i,order,visited);	
+	for(auto&& w : graph[v])
+		if(!visited[w])
+			dfsSCC1(graph,w,order,visited);	
 
 	order.push_back(v);
 }
 
-void dfsSCC2(const std::vector<std::vector<bool>>& graph, int v,int comp,std::vector<int>& component){
+void dfsSCC2(const std::vector<std::vector<int>>& graph, int v,int comp,std::vector<int>& component){
 	component[v]=comp;
-	for(size_t i =0; i< graph.size();i++)
-		if(graph[i][v] && component[i]==-1)
-			dfsSCC2(graph,i,comp,component);	
+	for(auto&& w : graph[v])
+		if(component[w]==-1)
+			dfsSCC2(graph,w,comp,component);	
 }
 
 /**
  * An implementation of Kosaraju's algorithm for a graph represented by an adjacency matrix.
  */
-auto stronglyConnectedComponents(const std::vector<std::vector<bool>>& graph){
+auto stronglyConnectedComponents(const std::vector<std::vector<int>>& graph){
 
 	std::vector<bool> visited (graph.size(),false);
 	std::vector<int> order; 
@@ -673,13 +673,19 @@ auto stronglyConnectedComponents(const std::vector<std::vector<bool>>& graph){
 		}
 	}
 
+	std::vector<std::vector<int>> graph_t(graph.size());
+
+	for(size_t u=0; u<graph.size();u++)
+		for(auto&& v : graph[u])
+			graph_t[v].push_back(u);
+
 	size_t comp =0;
 	std::vector<int> component (graph.size(),-1);
 
 	for(size_t i=0 ;i < graph.size(); i++){
 		int v = order[graph.size() - i - 1];
 		if(component[v]==-1){
-			dfsSCC2(graph,v,comp,component);
+			dfsSCC2(graph_t,v,comp,component);
 			comp++;
 		}
 	}
