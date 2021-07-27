@@ -43,7 +43,7 @@ auto test_bridgeOverlap(){
 	//	std::cout << v << ' ';
 	//std::cout << std::endl;
 
-	ASSERT(overlap && overlap.value().size()==3);
+	ASSERT(overlap.size()==3);
 }
 
 auto test_bridgeOverlap2(){
@@ -67,7 +67,7 @@ auto test_bridgeOverlap2(){
 	//for(auto&& v : overlap.value())
 	//	std::cout << v << ' ';
 	//std::cout << std::endl;
-	ASSERT(overlap && overlap.value().size()==4);
+	ASSERT(overlap.size()==4);
 
 }
 
@@ -89,7 +89,7 @@ auto test_bridgeOverlap3(){
 
 	auto overlap = bridgeOverlap(g,b1_attachments,b2_attachments,facial_cycle);
 
-	ASSERT(!overlap);
+	ASSERT(overlap.size()==0);
 
 }
 

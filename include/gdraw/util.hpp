@@ -508,14 +508,14 @@ auto createSubgraph(IndexedGraph<Graph>& g, T&& edge_list){
 }
 
 /**
- * Checks if two bridges overlap. The input parameters are characteristic vectors of their attachments. 
+ * Checks if two bridges overlap. The input parameters are characteristic vectors of their attachments. The result will be a std::vector of size 4 (skew overlap), 3 or 0 (no overlap) containing the overlapping attachments.
  */
 template <typename T,typename Graph>
 requires std::ranges::forward_range<T> && EdgeRange<T,Graph>
 auto bridgeOverlap(const IndexedGraph<Graph> g,
 		const std::vector<bool> b1_attachments,
 		const std::vector<bool> b2_attachments,
-		T&& cycle) -> std::optional<std::vector<vertex_t<Graph>>>{
+		T&& cycle) -> std::vector<vertex_t<Graph>>{
 
 	//overlap
 	std::vector<vertex_t<Graph>> overlap;
