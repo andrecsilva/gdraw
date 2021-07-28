@@ -42,7 +42,7 @@ Unit tests are contained in `test` subfolder. Use `make test_all` to run all of 
 
 Most of the graph types used in the library are templated wrappers around BOOST's own graph types. They all have copy and move semantics imbued into them.
 
-You're free to use any of BOOST's graph types as long as it has `vertex_index` and `edge_index` as internal properties.
+You're free to use any of BOOST's graph types as long as it has `vertex_index` and `edge_index` as internal properties. However the library was developed with Boost's adjacency list (with OutEdgeList and VertexList) in mind and hasn't been thoroughly tested with other types. 
 
 ### Functions
 
